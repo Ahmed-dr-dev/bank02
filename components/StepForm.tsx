@@ -5,20 +5,30 @@ import { useState } from 'react';
 interface StepFormProps {
   steps: string[];
   children: React.ReactNode[];
-  onSubmit: (data: any) => void;
+  onSubmit: (data: unknown) => void;
+  locale?: 'fr' | 'en';
+  /** Si fourni, appelé avant de passer à l'étape suivante. Retourner false pour bloquer. */
+  onValidateStep?: (stepIndex: number) => boolean | Promise<boolean>;
+  /** Désactive le bouton de soumission (ex: envoi en cours) */
+  submitDisabled?: boolean;
 }
 
-export default function StepForm({ steps, children, onSubmit }: StepFormProps) {
+export default function StepForm({ steps, children, onSubmit, locale = 'en', onValidateStep, submitDisabled = false }: StepFormProps) {
+  const isFr = locale === 'fr';
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
 
   const isLastStep = currentStep === steps.length - 1;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (onValidateStep) {
+      const ok = await Promise.resolve(onValidateStep(currentStep));
+      if (!ok) return;
+    }
     if (isLastStep) {
       onSubmit(formData);
     } else {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((s) => s + 1);
     }
   };
 
@@ -78,14 +88,15 @@ export default function StepForm({ steps, children, onSubmit }: StepFormProps) {
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md'
           }`}
         >
-          Back
+          {isFr ? 'Précédent' : 'Back'}
         </button>
         <button
           type="button"
           onClick={handleNext}
-          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 shadow-lg"
+          disabled={submitDisabled}
+          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLastStep ? 'Submit Application' : 'Next Step'}
+          {isLastStep ? (isFr ? 'Soumettre la demande' : 'Submit Application') : (isFr ? 'Étape suivante' : 'Next Step')}
         </button>
       </div>
     </div>

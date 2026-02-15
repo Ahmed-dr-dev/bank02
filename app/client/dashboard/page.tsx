@@ -1,133 +1,136 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import DashboardCard from '@/components/DashboardCard';
-import { mockRequests, mockClientStats } from '@/lib/mockData';
+import type { CreditRequest } from '@/lib/mockData';
+
+type ClientStats = {
+  totalRequests: number;
+  approvedRequests: number;
+  activeRequests: number;
+};
 
 export default function ClientDashboard() {
-  // Filter client's own requests (mock - showing first 2)
-  const myRequests = mockRequests.slice(0, 2);
+  const [requests, setRequests] = useState<CreditRequest[]>([]);
+  const [stats, setStats] = useState<ClientStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [reqRes, statsRes] = await Promise.all([
+          fetch('/api/credit-requests'),
+          fetch('/api/dashboard/stats'),
+        ]);
+        if (reqRes.ok) {
+          const data = await reqRes.json();
+          setRequests(Array.isArray(data) ? data : []);
+        }
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats(data);
+        }
+      } catch {
+        setRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const recent = requests.slice(0, 4);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, Ahmed!</h1>
-        <p className="text-gray-600 mt-1">Here's an overview of your credit applications</p>
+        <h1 className="text-3xl font-bold text-gray-900">Accueil</h1>
+        <p className="text-gray-600 mt-1">Demande de crédit, simulation et suivi de vos dossiers</p>
+        {stats != null && (
+          <p className="text-sm text-gray-500 mt-2">
+            {stats.totalRequests} demande{stats.totalRequests !== 1 ? 's' : ''} · {stats.approvedRequests} approuvée{stats.approvedRequests !== 1 ? 's' : ''} · {stats.activeRequests} en cours
+          </p>
+        )}
       </div>
 
-      {/* Stats Grid */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <DashboardCard
-          title="Active Requests"
-          value={mockClientStats.activeRequests}
-          icon="📋"
-          subtitle="In progress"
-        />
-        <DashboardCard
-          title="Approved Credits"
-          value={mockClientStats.approvedRequests}
-          icon="✅"
-          subtitle="Successfully approved"
-        />
-        <DashboardCard
-          title="Total Applications"
-          value={mockClientStats.totalRequests}
-          icon="📊"
-          subtitle="All time"
-        />
+        <Link
+          href="/client/new-request"
+          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all group"
+        >
+          <span className="text-4xl block mb-4">📝</span>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600">Demande de crédit</h2>
+          <p className="text-gray-600 text-sm">Déposer une nouvelle demande de crédit en TND</p>
+          <span className="inline-block mt-4 text-blue-600 font-medium text-sm">Créer une demande →</span>
+        </Link>
+
+        <Link
+          href="/client/simulator"
+          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-green-300 hover:shadow-xl transition-all group"
+        >
+          <span className="text-4xl block mb-4">💰</span>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-600">Simulateur</h2>
+          <p className="text-gray-600 text-sm">Estimer vos mensualités et montant possible en TND</p>
+          <span className="inline-block mt-4 text-green-600 font-medium text-sm">Ouvrir le simulateur →</span>
+        </Link>
+
+        <Link
+          href="/client/requests"
+          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-purple-300 hover:shadow-xl transition-all group"
+        >
+          <span className="text-4xl block mb-4">📄</span>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-600">Suivi des dossiers</h2>
+          <p className="text-gray-600 text-sm">Voir le statut de vos demandes en cours et passées</p>
+          <span className="inline-block mt-4 text-purple-600 font-medium text-sm">Voir mes dossiers →</span>
+        </Link>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          <Link
-            href="/client/new-request"
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 text-center font-semibold shadow-lg card-hover"
-          >
-            <span className="text-2xl block mb-2">+</span>
-            New Credit Request
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900">Dernières demandes</h2>
+          <Link href="/client/requests" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            Voir tout →
           </Link>
-          <Link
-            href="/client/simulator"
-            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-xl hover:from-green-700 hover:to-emerald-700 text-center font-semibold shadow-lg card-hover"
-          >
-            <span className="text-2xl block mb-2">💰</span>
-            Credit Simulator
-          </Link>
-          <Link
-            href="/client/requests"
-            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-xl hover:from-purple-700 hover:to-pink-700 text-center font-semibold shadow-lg card-hover"
-          >
-            <span className="text-2xl block mb-2">📄</span>
-            View All Requests
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent Requests */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Recent Applications</h2>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            {myRequests.map((request) => (
-              <div
-                key={request.id}
-                className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-500 transition-all card-hover bg-gradient-to-r from-white to-gray-50"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Credit Request - {request.amount.toLocaleString()} MAD
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {request.duration} months • Submitted on{' '}
-                      {new Date(request.submittedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        request.status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : request.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : request.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-orange-100 text-orange-800'
-                      }`}
-                    >
-                      {request.status === 'approved'
-                        ? 'Approved'
-                        : request.status === 'pending'
-                        ? 'Pending'
-                        : request.status === 'rejected'
-                        ? 'Rejected'
-                        : 'Guarantees Required'}
-                    </span>
-                    <Link
-                      href={`/client/request/${request.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {myRequests.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No applications yet</p>
-              <Link
-                href="/client/new-request"
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Create your first application
-              </Link>
+          {loading ? (
+            <p className="text-gray-500 text-center py-6">Chargement…</p>
+          ) : recent.length > 0 ? (
+            <div className="space-y-3">
+              {recent.map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/client/request/${r.id}`}
+                  className="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-medium text-gray-900">{Number(r.amount).toLocaleString()} TND</span>
+                  <span className="text-sm text-gray-600">{r.duration} mois</span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      r.status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : r.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : r.status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-orange-100 text-orange-800'
+                    }`}
+                  >
+                    {r.status === 'approved' ? 'Approuvé' : r.status === 'pending' ? 'En attente' : r.status === 'rejected' ? 'Refusé' : 'Garanties'}
+                  </span>
+                </Link>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-500 text-center py-6">Aucune demande. <Link href="/client/new-request" className="text-blue-600 hover:underline">Créer une demande</Link></p>
           )}
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+        <Link href="/client/loan-types" className="hover:text-blue-600">Types de crédit</Link>
+        <Link href="/client/profile" className="hover:text-blue-600">Mon profil</Link>
+        <a href="mailto:contact@creditpro.tn" className="hover:text-blue-600">Nous contacter</a>
       </div>
     </div>
   );

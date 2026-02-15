@@ -4,292 +4,281 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
+import { validateStep, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
+
+const emptyForm: RequestFormData = {
+  firstName: '',
+  lastName: '',
+  dateOfBirth: '',
+  cin: '',
+  phone: '',
+  email: '',
+  employmentStatus: '',
+  profession: '',
+  employer: '',
+  yearsExperience: '',
+  workAddress: '',
+  monthlyIncome: '',
+  additionalIncome: '0',
+  rentMortgage: '0',
+  otherCharges: '0',
+  existingLoans: '',
+  loanPayment: '0',
+  creditAmount: '',
+  duration: '',
+  creditPurpose: '',
+  guaranteeType: '',
+  notes: '',
+};
 
 export default function NewRequest() {
   const router = useRouter();
+  const [formData, setFormData] = useState<RequestFormData>(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const steps = ['Personal Info', 'Professional', 'Income & Charges', 'Credit Details', 'Documents'];
+  const steps = ['État civil', 'Professionnel', 'Revenus et charges', 'Détails du crédit', 'Documents'];
 
-  const handleSubmit = (data: any) => {
-    console.log('Form submitted:', data);
-    // Redirect to requests page
-    router.push('/client/requests');
+  const update = (key: keyof RequestFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData((f) => ({ ...f, [key]: e.target.value }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: '' }));
   };
+
+  const validateCurrentStep = (stepIndex: number): boolean => {
+    const stepErrors = validateStep(formData, stepIndex);
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleSubmit = async () => {
+    setSubmitError('');
+    setSubmitting(true);
+    try {
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        profession: formData.profession,
+        employmentStatus: formData.employmentStatus,
+        employer: formData.employer,
+        yearsExperience: formData.yearsExperience,
+        workAddress: formData.workAddress,
+        monthlyIncome: formData.monthlyIncome,
+        additionalIncome: formData.additionalIncome,
+        rentMortgage: formData.rentMortgage,
+        otherCharges: formData.otherCharges,
+        existingLoans: formData.existingLoans,
+        loanPayment: formData.loanPayment,
+        creditAmount: formData.creditAmount,
+        duration: formData.duration,
+        creditPurpose: formData.creditPurpose,
+        guaranteeType: formData.guaranteeType,
+        notes: formData.notes,
+      };
+      const res = await fetch('/api/credit-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || res.statusText);
+      }
+      const created = await res.json();
+      router.push(created?.id ? `/client/request/${created.id}` : '/client/requests');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Erreur lors de l\'envoi');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const err = (key: string) => errors[key];
+  const inputClass = (key: string) =>
+    `w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${err(key) ? 'border-red-500' : 'border-gray-300'}`;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">New Credit Request</h1>
-        <p className="text-gray-600 mt-1">
-          Complete all steps to submit your credit application
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">Nouvelle demande de crédit</h1>
+        <p className="text-gray-600 mt-1">Remplissez toutes les étapes pour soumettre votre dossier (exigences Tunisie, TND)</p>
       </div>
 
-      <StepForm steps={steps} onSubmit={handleSubmit}>
-        {/* Step 1: Personal Info */}
+      {submitError && (
+        <p className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{submitError}</p>
+      )}
+      <StepForm steps={steps} onSubmit={handleSubmit} locale="fr" onValidateStep={validateCurrentStep} submitDisabled={submitting}>
+        {/* Étape 1 : État civil */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Personal Information</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Informations personnelles</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Ahmed"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
+              <input type="text" value={formData.firstName ?? ''} onChange={update('firstName')} className={inputClass('firstName')} placeholder="Sirine" />
+              {err('firstName') && <p className="text-red-500 text-sm mt-1">{err('firstName')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Benali"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
+              <input type="text" value={formData.lastName ?? ''} onChange={update('lastName')} className={inputClass('lastName')} placeholder="Nciri" />
+              {err('lastName') && <p className="text-red-500 text-sm mt-1">{err('lastName')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date de naissance</label>
+              <input type="date" value={formData.dateOfBirth ?? ''} onChange={update('dateOfBirth')} className={inputClass('dateOfBirth')} />
+              {err('dateOfBirth') && <p className="text-red-500 text-sm mt-1">{err('dateOfBirth')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                National ID
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="AB123456"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">CIN (carte d&apos;identité nationale)</label>
+              <input type="text" value={formData.cin ?? ''} onChange={update('cin')} className={inputClass('cin')} placeholder="Ex. 12345678" maxLength={CIN_MAX_LENGTH} />
+              {err('cin') && <p className="text-red-500 text-sm mt-1">{err('cin')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="+212 6XX-XXXXXX"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone (Tunisie)</label>
+              <input type="tel" value={formData.phone ?? ''} onChange={update('phone')} className={inputClass('phone')} placeholder="+216 XX XXX XXX" />
+              {err('phone') && <p className="text-red-500 text-sm mt-1">{err('phone')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="your.email@example.com"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+              <input type="email" value={formData.email ?? ''} onChange={update('email')} className={inputClass('email')} placeholder="sirine.nciri@exemple.com" />
+              {err('email') && <p className="text-red-500 text-sm mt-1">{err('email')}</p>}
             </div>
           </div>
         </div>
 
-        {/* Step 2: Professional */}
+        {/* Étape 2 : Professionnel */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Professional Situation
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Situation professionnelle</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Employment Status
-              </label>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option>Employed</option>
-                <option>Self-Employed</option>
-                <option>Unemployed</option>
-                <option>Retired</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Situation</label>
+              <select value={formData.employmentStatus ?? ''} onChange={update('employmentStatus')} className={inputClass('employmentStatus')}>
+                <option value="">Choisir</option>
+                <option value="Salarié(e)">Salarié(e)</option>
+                <option value="Indépendant(e)">Indépendant(e)</option>
+                <option value="Sans emploi">Sans emploi</option>
+                <option value="Retraité(e)">Retraité(e)</option>
               </select>
+              {err('employmentStatus') && <p className="text-red-500 text-sm mt-1">{err('employmentStatus')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Occupation
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Software Engineer"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
+              <input type="text" value={formData.profession ?? ''} onChange={update('profession')} className={inputClass('profession')} placeholder="Ingénieur informatique" />
+              {err('profession') && <p className="text-red-500 text-sm mt-1">{err('profession')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Employer Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Company Name"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
+              <input type="text" value={formData.employer ?? ''} onChange={update('employer')} className={inputClass('employer')} placeholder="Nom de l&apos;entreprise" />
+              {err('employer') && <p className="text-red-500 text-sm mt-1">{err('employer')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Years of Experience
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="5"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
+              <input type="number" min={0} max={50} value={formData.yearsExperience ?? ''} onChange={update('yearsExperience')} className={inputClass('yearsExperience')} placeholder="5" />
+              {err('yearsExperience') && <p className="text-red-500 text-sm mt-1">{err('yearsExperience')}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Work Address
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Street, City, Postal Code"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Adresse professionnelle</label>
+              <input type="text" value={formData.workAddress ?? ''} onChange={update('workAddress')} className={inputClass('workAddress')} placeholder="Rue, ville, code postal" />
             </div>
           </div>
         </div>
 
-        {/* Step 3: Income & Charges */}
+        {/* Étape 3 : Revenus et charges */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Income & Charges</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenus et charges (TND)</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Monthly Net Income (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="15000"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND) *</label>
+              <input type="number" min={0} step={100} value={formData.monthlyIncome ?? ''} onChange={update('monthlyIncome')} className={inputClass('monthlyIncome')} placeholder="15000" />
+              {err('monthlyIncome') && <p className="text-red-500 text-sm mt-1">{err('monthlyIncome')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Income (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Autres revenus (TND)</label>
+              <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} placeholder="0" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Monthly Rent/Mortgage (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="3000"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loyer / Prêt (TND/mois)</label>
+              <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} placeholder="3000" />
+              {err('rentMortgage') && <p className="text-red-500 text-sm mt-1">{err('rentMortgage')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Other Monthly Charges (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="2000"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Autres charges mensuelles (TND)</label>
+              <input type="number" min={0} value={formData.otherCharges ?? ''} onChange={update('otherCharges')} className={inputClass('otherCharges')} placeholder="2000" />
+              {err('otherCharges') && <p className="text-red-500 text-sm mt-1">{err('otherCharges')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Existing Loans
-              </label>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option>No existing loans</option>
-                <option>1 loan</option>
-                <option>2 loans</option>
-                <option>3+ loans</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Crédits en cours</label>
+              <select value={formData.existingLoans ?? ''} onChange={update('existingLoans')} className={inputClass('existingLoans')}>
+                <option value="">Choisir</option>
+                <option value="Aucun">Aucun crédit en cours</option>
+                <option value="1">1 crédit</option>
+                <option value="2">2 crédits</option>
+                <option value="3+">3 crédits ou plus</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Monthly Loan Payment (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mensualité des crédits (TND)</label>
+              <input type="number" min={0} value={formData.loanPayment ?? ''} onChange={update('loanPayment')} className={inputClass('loanPayment')} placeholder="0" />
+              {err('loanPayment') && <p className="text-red-500 text-sm mt-1">{err('loanPayment')}</p>}
             </div>
           </div>
         </div>
 
-        {/* Step 4: Credit Details */}
+        {/* Étape 4 : Détails du crédit */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Credit Details</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails du crédit (TND, règles BCT)</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Credit Amount (MAD)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="250000"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND) *</label>
+              <input type="number" min={1000} max={2000000} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} placeholder="250000" />
+              {err('creditAmount') && <p className="text-red-500 text-sm mt-1">{err('creditAmount')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Duration (months)
-              </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="120"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois) *</label>
+              <input type="number" min={12} max={300} value={formData.duration ?? ''} onChange={update('duration')} className={inputClass('duration')} placeholder="120" />
+              {err('duration') && <p className="text-red-500 text-sm mt-1">{err('duration')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Purpose of Credit
-              </label>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option>Real Estate Purchase</option>
-                <option>Car Purchase</option>
-                <option>Home Renovation</option>
-                <option>Business Investment</option>
-                <option>Education</option>
-                <option>Other</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Objet du crédit</label>
+              <select value={formData.creditPurpose ?? ''} onChange={update('creditPurpose')} className={inputClass('creditPurpose')}>
+                <option value="">Choisir</option>
+                <option value="Achat immobilier">Achat immobilier</option>
+                <option value="Achat véhicule">Achat véhicule</option>
+                <option value="Travaux / rénovation">Travaux / rénovation</option>
+                <option value="Projet professionnel">Projet professionnel</option>
+                <option value="Études">Études</option>
+                <option value="Autre">Autre</option>
               </select>
+              {err('creditPurpose') && <p className="text-red-500 text-sm mt-1">{err('creditPurpose')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Guarantee Type
-              </label>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option>Real Estate</option>
-                <option>Vehicle</option>
-                <option>Salary Transfer</option>
-                <option>Personal Guarantee</option>
-                <option>None</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
+              <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
+                <option value="">Choisir</option>
+                <option value="Immobilier">Immobilier</option>
+                <option value="Véhicule">Véhicule</option>
+                <option value="Virement de salaire">Virement de salaire</option>
+                <option value="Caution personnelle">Caution personnelle</option>
+                <option value="Aucune">Aucune</option>
               </select>
+              {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Information
-              </label>
-              <textarea
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Any additional details about your credit request..."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>
+              <textarea rows={4} value={formData.notes ?? ''} onChange={update('notes')} className={inputClass('notes')} placeholder="Précisions éventuelles..." />
             </div>
           </div>
         </div>
 
-        {/* Step 5: Documents */}
+        {/* Étape 5 : Documents */}
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
-          <FileUpload label="National ID Card (Both sides)" accept="image/*" />
-          <FileUpload label="Recent Pay Slips (Last 3 months)" accept=".pdf,.doc,.docx" multiple />
-          <FileUpload label="Bank Statements (Last 6 months)" accept=".pdf" multiple />
-          <FileUpload label="Proof of Address" accept=".pdf,image/*" />
-          <FileUpload label="Additional Documents (Optional)" accept="*" multiple />
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Téléverser les pièces</h2>
+          <FileUpload label="CIN (recto et verso)" accept="image/*" />
+          <FileUpload label="Bulletins de salaire (3 derniers mois)" accept=".pdf,.doc,.docx" multiple />
+          <FileUpload label="Relevés bancaires (6 derniers mois)" accept=".pdf" multiple />
+          <FileUpload label="Justificatif de domicile" accept=".pdf,image/*" />
+          <FileUpload label="Autres pièces (optionnel)" accept="*" multiple />
         </div>
       </StepForm>
     </div>

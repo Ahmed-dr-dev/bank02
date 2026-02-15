@@ -19,8 +19,8 @@ export interface CreditRequest {
 export const mockRequests: CreditRequest[] = [
   {
     id: '1',
-    clientName: 'Ahmed Benali',
-    clientEmail: 'ahmed.benali@email.com',
+    clientName: 'Sirine Nciri',
+    clientEmail: 'sirine.nciri@email.com',
     amount: 250000,
     duration: 120,
     status: 'approved',
@@ -34,8 +34,8 @@ export const mockRequests: CreditRequest[] = [
   },
   {
     id: '2',
-    clientName: 'Fatima Zahra',
-    clientEmail: 'fatima.zahra@email.com',
+    clientName: 'Sirine Nciri',
+    clientEmail: 'sirine.nciri@email.com',
     amount: 180000,
     duration: 84,
     status: 'pending',
@@ -49,8 +49,8 @@ export const mockRequests: CreditRequest[] = [
   },
   {
     id: '3',
-    clientName: 'Mohammed Alami',
-    clientEmail: 'mohammed.alami@email.com',
+    clientName: 'Sirine Nciri',
+    clientEmail: 'sirine.nciri@email.com',
     amount: 500000,
     duration: 180,
     status: 'guarantees_required',
@@ -64,8 +64,8 @@ export const mockRequests: CreditRequest[] = [
   },
   {
     id: '4',
-    clientName: 'Salma Idrissi',
-    clientEmail: 'salma.idrissi@email.com',
+    clientName: 'Sirine Nciri',
+    clientEmail: 'sirine.nciri@email.com',
     amount: 320000,
     duration: 144,
     status: 'rejected',

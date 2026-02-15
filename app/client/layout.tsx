@@ -1,4 +1,4 @@
-import Navbar from '@/components/Navbar';
+import ClientSidebar from '@/components/ClientSidebar';
 
 export default function ClientLayout({
   children,
@@ -6,9 +6,9 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main>{children}</main>
+    <div className="flex min-h-screen bg-gray-50">
+      <ClientSidebar />
+      <main className="flex-1">{children}</main>
     </div>
   );
 }
