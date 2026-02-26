@@ -11,18 +11,38 @@ export async function GET() {
   const isAdmin = profile?.role === 'admin';
 
   if (isAdmin) {
-    const { data: rows, error } = await supabase.from('credit_requests').select('status, score');
+    const { data: rows, error } = await supabase.from('credit_requests').select('id, status, score, score_category, submitted_at, amount, client_name, duration');
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    const total = rows?.length ?? 0;
-    const approved = rows?.filter((r) => r.status === 'approved').length ?? 0;
-    const pending = rows?.filter((r) => r.status === 'pending').length ?? 0;
-    const scores = (rows ?? []).map((r) => r.score).filter((s): s is number => s != null);
+    const list = rows ?? [];
+    const total = list.length;
+    const approved = list.filter((r) => r.status === 'approved').length;
+    const pending = list.filter((r) => r.status === 'pending').length;
+    const rejected = list.filter((r) => r.status === 'rejected').length;
+    const guarantees = list.filter((r) => r.status === 'guarantees_required').length;
+    const scores = list.map((r) => r.score).filter((s): s is number => s != null);
     const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const high = list.filter((r) => (r.score ?? 0) >= 70).length;
+    const medium = list.filter((r) => { const s = r.score ?? 0; return s >= 50 && s < 70; }).length;
+    const low = list.filter((r) => (r.score ?? 0) < 50).length;
+    const recent = list
+      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+      .slice(0, 5)
+      .map((r) => ({ id: r.id, status: r.status, score: r.score, score_category: r.score_category, amount: r.amount, submitted_at: r.submitted_at, client_name: r.client_name, duration: r.duration }));
     return NextResponse.json({
       totalRequests: total,
       approvalRate: total ? Math.round((approved / total) * 1000) / 10 : 0,
       averageScore: Math.round(avgScore * 10) / 10,
       pendingRequests: pending,
+      statusCounts: { approved, pending, rejected, guarantees_required: guarantees },
+      scoreDistribution: {
+        high: total ? Math.round((high / total) * 1000) / 10 : 0,
+        medium: total ? Math.round((medium / total) * 1000) / 10 : 0,
+        low: total ? Math.round((low / total) * 1000) / 10 : 0,
+        highCount: high,
+        mediumCount: medium,
+        lowCount: low,
+      },
+      recentRequests: recent,
     });
   }
 

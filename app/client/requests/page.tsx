@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DataTable from '@/components/DataTable';
 import type { CreditRequest } from '@/lib/mockData';
 
@@ -11,13 +11,32 @@ export default function ClientRequests() {
   const [periodFilter, setPeriodFilter] = useState<string>('');
   const [amountFilter, setAmountFilter] = useState<string>('');
 
-  useEffect(() => {
+  const fetchRequests = useCallback(() => {
+    setLoading(true);
     fetch('/api/credit-requests')
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setRequests(Array.isArray(data) ? data : []))
       .catch(() => setRequests([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleDelete = useCallback(
+    async (request: CreditRequest) => {
+      if (!request?.id) return;
+      if (typeof window !== 'undefined' && !window.confirm('Supprimer cette demande ?')) return;
+      const res = await fetch(`/api/credit-requests/${request.id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) setRequests((prev) => prev.filter((r) => r.id !== request.id));
+      else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Impossible de supprimer');
+      }
+    },
+    []
+  );
 
   const filteredRequests = useMemo(() => {
     let list = requests;
@@ -125,6 +144,8 @@ export default function ClientRequests() {
           <DataTable
             requests={filteredRequests}
             linkPrefix="/client/request"
+            editPrefix="/client/request"
+            onDelete={handleDelete}
             locale="fr"
             currency="TND"
           />

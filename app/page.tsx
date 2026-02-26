@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import TrackMyLoan from '@/components/TrackMyLoan';
+import ChatBot from '@/components/ChatBot';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
+      <ChatBot />
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -126,6 +129,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <TrackMyLoan />
 
       {/* Stats Section */}
       <section className="bg-gray-50 py-16 border-y border-gray-200">

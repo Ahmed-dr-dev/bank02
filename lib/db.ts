@@ -12,9 +12,22 @@ export type DbCreditRequest = {
   score_category: CreditRequest['scoreCategory'] | null;
   monthly_income: number | null;
   profession: string | null;
+  employment_status: string | null;
+  employer: string | null;
+  years_experience: number | null;
+  work_address: string | null;
+  additional_income: number | null;
+  rent_mortgage: number | null;
+  other_charges: number | null;
+  existing_loans: string | null;
+  loan_payment: number | null;
+  credit_purpose: string | null;
+  guarantee_type: string | null;
+  notes: string | null;
   documents: string[];
   submitted_at: string;
   updated_at: string;
+  tracking_code: string | null;
 };
 
 export function dbRowToCreditRequest(row: DbCreditRequest): CreditRequest {
@@ -32,5 +45,18 @@ export function dbRowToCreditRequest(row: DbCreditRequest): CreditRequest {
     monthlyIncome: Number(row.monthly_income) ?? 0,
     profession: row.profession ?? '',
     documents: Array.isArray(row.documents) ? row.documents : [],
+    employmentStatus: row.employment_status ?? undefined,
+    employer: row.employer ?? undefined,
+    yearsExperience: row.years_experience ?? undefined,
+    workAddress: row.work_address ?? undefined,
+    additionalIncome: Number(row.additional_income) ?? 0,
+    rentMortgage: Number(row.rent_mortgage) ?? 0,
+    otherCharges: Number(row.other_charges) ?? 0,
+    existingLoans: row.existing_loans ?? undefined,
+    loanPayment: Number(row.loan_payment) ?? 0,
+    creditPurpose: row.credit_purpose ?? undefined,
+    guaranteeType: row.guarantee_type ?? undefined,
+    notes: row.notes ?? undefined,
+    trackingCode: row.tracking_code ?? undefined,
   };
 }

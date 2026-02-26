@@ -14,6 +14,21 @@ export interface CreditRequest {
   monthlyIncome: number;
   profession: string;
   documents: string[];
+  // Detail view
+  employmentStatus?: string;
+  employer?: string;
+  yearsExperience?: number | null;
+  workAddress?: string;
+  additionalIncome?: number;
+  rentMortgage?: number;
+  otherCharges?: number;
+  existingLoans?: string;
+  loanPayment?: number;
+  creditPurpose?: string;
+  guaranteeType?: string;
+  notes?: string;
+  /** Code for "Suivi de mon crédit" on home (no login) */
+  trackingCode?: string;
 }
 
 export const mockRequests: CreditRequest[] = [

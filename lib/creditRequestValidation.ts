@@ -70,9 +70,6 @@ export function validateStep2Pro(data: RequestFormData): Record<string, string> 
   if (!data.employmentStatus?.trim()) err.employmentStatus = 'Situation professionnelle requise';
   if (!data.profession?.trim()) err.profession = 'Profession requise';
   if (!data.employer?.trim()) err.employer = 'Employeur requis';
-  const years = parseInt(data.yearsExperience ?? '', 10);
-  if (data.yearsExperience !== undefined && data.yearsExperience !== '' && (isNaN(years) || years < 0 || years > 50))
-    err.yearsExperience = 'Nombre d\'années invalide (0-50)';
   return err;
 }
 
@@ -101,10 +98,8 @@ export function validateStep4Credit(data: RequestFormData): Record<string, strin
   const amount = parseFloat(data.creditAmount ?? '');
   if (data.creditAmount === undefined || data.creditAmount === '')
     err.creditAmount = 'Montant demandé requis';
-  else if (isNaN(amount) || amount < MIN_CREDIT_AMOUNT_TND)
-    err.creditAmount = `Montant minimum : ${MIN_CREDIT_AMOUNT_TND.toLocaleString('fr-FR')} TND`;
-  else if (amount > MAX_CREDIT_AMOUNT_TND)
-    err.creditAmount = `Montant maximum : ${MAX_CREDIT_AMOUNT_TND.toLocaleString('fr-FR')} TND`;
+  else if (isNaN(amount) || amount <= 0)
+    err.creditAmount = 'Montant doit être supérieur à 0';
   const duration = parseInt(data.duration ?? '', 10);
   if (data.duration === undefined || data.duration === '')
     err.duration = 'Durée requise';
@@ -114,20 +109,6 @@ export function validateStep4Credit(data: RequestFormData): Record<string, strin
     err.duration = `Durée maximum : ${MAX_DURATION_MONTHS} mois (25 ans)`;
   if (!data.creditPurpose?.trim()) err.creditPurpose = 'Objet du crédit requis';
   if (!data.guaranteeType?.trim()) err.guaranteeType = 'Type de garantie requis';
-  // Taux d'endettement (optionnel mais recommandé)
-  const monthlyIncome = parseFloat(data.monthlyIncome ?? '0') || 0;
-  const additionalIncome = parseFloat(data.additionalIncome ?? '0') || 0;
-  const totalIncome = monthlyIncome + additionalIncome;
-  const rent = parseFloat(data.rentMortgage ?? '0') || 0;
-  const other = parseFloat(data.otherCharges ?? '0') || 0;
-  const loanPmt = parseFloat(data.loanPayment ?? '0') || 0;
-  if (totalIncome > 0 && amount > 0 && duration > 0) {
-    const rate = 0.045 / 12;
-    const monthlyCredit = (amount * rate * Math.pow(1 + rate, duration)) / (Math.pow(1 + rate, duration) - 1);
-    const debtRatio = ((monthlyCredit + rent + other + loanPmt) / totalIncome) * 100;
-    if (debtRatio > MAX_DEBT_RATIO_PERCENT)
-      err.creditAmount = `Taux d'endettement trop élevé (${debtRatio.toFixed(0)} %). Maximum conseillé : ${MAX_DEBT_RATIO_PERCENT} % (règles BCT).`;
-  }
   return err;
 }
 

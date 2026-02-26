@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionProfileId, setProfileIdCookie } from '@/lib/session';
+import { logActivity } from '@/lib/activityLog';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select('id, password_hash')
+    .select('id, password_hash, role')
     .eq('email', String(email).trim().toLowerCase())
     .single();
 
@@ -25,7 +26,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'E-mail ou mot de passe incorrect' }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  await logActivity({ userId: profile.id, action: 'login', entityType: 'profile', entityId: profile.id });
+  const res = NextResponse.json({ ok: true, role: profile.role ?? 'client' });
   res.headers.set('Set-Cookie', setProfileIdCookie(profile.id));
   return res;
 }

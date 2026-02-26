@@ -8,11 +8,13 @@ interface DataTableProps {
   requests: CreditRequest[];
   showActions?: boolean;
   linkPrefix?: string;
+  editPrefix?: string;
+  onDelete?: (request: CreditRequest) => void;
   locale?: 'fr' | 'en';
   currency?: string;
 }
 
-export default function DataTable({ requests = [], showActions = true, linkPrefix = '/admin/requests', locale = 'en', currency = 'MAD' }: DataTableProps) {
+export default function DataTable({ requests = [], showActions = true, linkPrefix = '/admin/requests', editPrefix, onDelete, locale = 'en', currency = 'MAD' }: DataTableProps) {
   const isFr = locale === 'fr';
   const safeRequests = Array.isArray(requests) ? requests : [];
 
@@ -111,12 +113,25 @@ export default function DataTable({ requests = [], showActions = true, linkPrefi
               </td>
               {showActions && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <Link
-                    href={`${linkPrefix}/${request?.id ?? ''}`}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    {isFr ? 'Voir' : 'View Details'}
-                  </Link>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Link href={`${linkPrefix}/${request?.id ?? ''}`} className="text-blue-600 hover:text-blue-800 font-medium">
+                      {isFr ? 'Voir' : 'View Details'}
+                    </Link>
+                    {editPrefix && (
+                      <Link href={`${editPrefix}/${request?.id ?? ''}/edit`} className="text-amber-600 hover:text-amber-800 font-medium">
+                        {isFr ? 'Modifier' : 'Edit'}
+                      </Link>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(request as CreditRequest)}
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
+                        {isFr ? 'Supprimer' : 'Delete'}
+                      </button>
+                    )}
+                  </span>
                 </td>
               )}
             </tr>

@@ -7,10 +7,12 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const menuItems = [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/admin/requests', label: 'Requests', icon: '📝' },
+    { href: '/admin/dashboard', label: 'Tableau de bord', icon: '📊' },
+    { href: '/admin/requests', label: 'Demandes', icon: '📝' },
+    { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
+    { href: '/admin/settings', label: 'Scoring', icon: '⚙️' },
+    { href: '/admin/logs', label: 'Journal', icon: '📋' },
     { href: '/admin/analytics', label: 'Analytics', icon: '📈' },
-    { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (
@@ -38,9 +40,9 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="absolute bottom-0 w-64 p-6 border-t border-gray-800">
-        <Link href="/login" className="flex items-center text-gray-400 hover:text-red-400 transition-colors">
+        <Link href="/api/auth/logout" className="flex items-center text-gray-400 hover:text-red-400 transition-colors">
           <span className="mr-2">🚪</span>
-          Logout
+          Déconnexion
         </Link>
       </div>
     </aside>

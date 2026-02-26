@@ -1,6 +1,8 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionProfileId } from '@/lib/session';
+import { logActivity } from '@/lib/activityLog';
 import { dbRowToCreditRequest } from '@/lib/db';
 
 export async function GET() {
@@ -36,11 +38,13 @@ export async function POST(request: Request) {
   const duration = Number(body.duration) || 0;
   const score = Math.min(100, Math.max(0, 50 + Math.floor(Math.random() * 40)));
   const scoreCategory = score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low';
+  const trackingCode = randomBytes(4).toString('hex');
 
   const { data, error } = await supabase
     .from('credit_requests')
     .insert({
       user_id: profileId,
+      tracking_code: trackingCode,
       client_name: fullName,
       client_email: email,
       amount,
@@ -68,5 +72,12 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await logActivity({
+    userId: profileId,
+    action: 'request_created',
+    entityType: 'credit_request',
+    entityId: data.id,
+    details: { amount: data.amount, status: data.status },
+  });
   return NextResponse.json(dbRowToCreditRequest(data as Parameters<typeof dbRowToCreditRequest>[0]));
 }

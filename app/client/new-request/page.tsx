@@ -16,7 +16,6 @@ const emptyForm: RequestFormData = {
   employmentStatus: '',
   profession: '',
   employer: '',
-  yearsExperience: '',
   workAddress: '',
   monthlyIncome: '',
   additionalIncome: '0',
@@ -51,6 +50,11 @@ export default function NewRequest() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [documentFiles, setDocumentFiles] = useState<Record<string, File[]>>({});
+
+  const onDocumentFiles = (key: string) => (files: File[]) => {
+    setDocumentFiles((prev) => ({ ...prev, [key]: files }));
+  };
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -63,7 +67,6 @@ export default function NewRequest() {
         profession: formData.profession,
         employmentStatus: formData.employmentStatus,
         employer: formData.employer,
-        yearsExperience: formData.yearsExperience,
         workAddress: formData.workAddress,
         monthlyIncome: formData.monthlyIncome,
         additionalIncome: formData.additionalIncome,
@@ -87,7 +90,18 @@ export default function NewRequest() {
         throw new Error(err.error || res.statusText);
       }
       const created = await res.json();
-      router.push(created?.id ? `/client/request/${created.id}` : '/client/requests');
+      const requestId = created?.id;
+      const allFiles = Object.values(documentFiles).flat();
+      if (requestId && allFiles.length > 0) {
+        const form = new FormData();
+        allFiles.forEach((f) => form.append('files', f));
+        await fetch(`/api/credit-requests/${requestId}/documents`, {
+          method: 'POST',
+          body: form,
+          credentials: 'include',
+        });
+      }
+      router.push(requestId ? `/client/request/${requestId}` : '/client/requests');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Erreur lors de l\'envoi');
     } finally {
@@ -172,11 +186,6 @@ export default function NewRequest() {
               <input type="text" value={formData.employer ?? ''} onChange={update('employer')} className={inputClass('employer')} placeholder="Nom de l&apos;entreprise" />
               {err('employer') && <p className="text-red-500 text-sm mt-1">{err('employer')}</p>}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
-              <input type="number" min={0} max={50} value={formData.yearsExperience ?? ''} onChange={update('yearsExperience')} className={inputClass('yearsExperience')} placeholder="5" />
-              {err('yearsExperience') && <p className="text-red-500 text-sm mt-1">{err('yearsExperience')}</p>}
-            </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Adresse professionnelle</label>
               <input type="text" value={formData.workAddress ?? ''} onChange={update('workAddress')} className={inputClass('workAddress')} placeholder="Rue, ville, code postal" />
@@ -227,11 +236,11 @@ export default function NewRequest() {
 
         {/* Étape 4 : Détails du crédit */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails du crédit (TND, règles BCT)</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails du crédit (TND)</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND) *</label>
-              <input type="number" min={1000} max={2000000} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} placeholder="250000" />
+              <input type="number" min={0} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} placeholder="250000" />
               {err('creditAmount') && <p className="text-red-500 text-sm mt-1">{err('creditAmount')}</p>}
             </div>
             <div>
@@ -274,11 +283,11 @@ export default function NewRequest() {
         {/* Étape 5 : Documents */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Téléverser les pièces</h2>
-          <FileUpload label="CIN (recto et verso)" accept="image/*" />
-          <FileUpload label="Bulletins de salaire (3 derniers mois)" accept=".pdf,.doc,.docx" multiple />
-          <FileUpload label="Relevés bancaires (6 derniers mois)" accept=".pdf" multiple />
-          <FileUpload label="Justificatif de domicile" accept=".pdf,image/*" />
-          <FileUpload label="Autres pièces (optionnel)" accept="*" multiple />
+          <FileUpload label="CIN (recto et verso)" accept="image/*" onFilesChange={onDocumentFiles('cin')} />
+          <FileUpload label="Bulletins de salaire (3 derniers mois)" accept=".pdf,.doc,.docx" multiple onFilesChange={onDocumentFiles('paySlips')} />
+          <FileUpload label="Relevés bancaires (6 derniers mois)" accept=".pdf" multiple onFilesChange={onDocumentFiles('bankStatements')} />
+          <FileUpload label="Justificatif de domicile" accept=".pdf,image/*" onFilesChange={onDocumentFiles('domicile')} />
+          <FileUpload label="Autres pièces (optionnel)" accept="*" multiple onFilesChange={onDocumentFiles('other')} />
         </div>
       </StepForm>
     </div>

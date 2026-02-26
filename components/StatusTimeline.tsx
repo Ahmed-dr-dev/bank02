@@ -8,12 +8,15 @@ interface TimelineEvent {
 interface StatusTimelineProps {
   events: TimelineEvent[];
   locale?: 'fr' | 'en';
+  /** Optional subtitle with real dates (e.g. "Déposé le X · Dernière mise à jour le Y") */
+  subtitle?: string;
 }
 
-export default function StatusTimeline({ events, locale = 'en' }: StatusTimelineProps) {
+export default function StatusTimeline({ events, locale = 'en', subtitle }: StatusTimelineProps) {
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-      <h3 className="text-xl font-bold text-gray-900 mb-8">{locale === 'fr' ? 'Suivi du dossier' : 'Request Timeline'}</h3>
+      <h3 className="text-xl font-bold text-gray-900">{locale === 'fr' ? 'Suivi du dossier' : 'Request Timeline'}</h3>
+      {subtitle && <p className="text-sm text-gray-500 mt-1 mb-6">{subtitle}</p>}
       <div className="space-y-6">
         {events.map((event, index) => (
           <div key={index} className="flex">
