@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       password_hash,
       full_name: fullName || null,
       phone: body.phone || null,
+      role: 'client',
     })
     .select('id')
     .single();

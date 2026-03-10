@@ -12,7 +12,7 @@ async function checkAccess(requestId: string, profileId: string, supabase: Await
     .single();
   if (!reqRow || reqRow.user_id !== profileId) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', profileId).single();
-    if (profile?.role !== 'admin') return false;
+    if (profile?.role !== 'admin' && profile?.role !== 'credit_officer') return false;
   }
   return true;
 }

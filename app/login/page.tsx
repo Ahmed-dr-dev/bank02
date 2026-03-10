@@ -27,7 +27,9 @@ export default function LoginPage() {
         setError(data.error || 'Erreur de connexion');
         return;
       }
-      router.push(data.role === 'admin' ? '/admin/dashboard' : '/client/dashboard');
+      if (data.role === 'admin') router.push('/admin/dashboard');
+      else if (data.role === 'credit_officer') router.push('/agent/dashboard');
+      else router.push('/client/dashboard');
       router.refresh();
     } catch {
       setError('Erreur de connexion');

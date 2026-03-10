@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ScoreBadge from '@/components/ScoreBadge';
 import StatusTimeline from '@/components/StatusTimeline';
+import RequestChat from '@/components/RequestChat';
 import type { CreditRequest } from '@/lib/mockData';
 
 function formatTND(n: number): string {
@@ -25,7 +26,7 @@ function LabelValue({ label, value, hideIfEmpty, className = '' }: { label: stri
   return (
     <div className={className}>
       <p className="text-sm text-gray-500 mb-0.5">{label}</p>
-      <p className="text-gray-900 font-medium">{value ?? '—'}</p>
+      <div className="text-gray-900 font-medium">{value ?? '—'}</div>
     </div>
   );
 }
@@ -263,6 +264,15 @@ export default function ClientRequestDetail() {
               </div>
             </section>
           )}
+
+          {/* Messagerie */}
+          <section className="bg-white rounded-xl border border-gray-200 overflow-hidden" id="messages">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Messages avec votre chargé de crédit</h2>
+              <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">Répond sous 24h ouvrées</span>
+            </div>
+            <RequestChat requestId={request.id} currentRole="client" />
+          </section>
 
           {/* Documents */}
           <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">

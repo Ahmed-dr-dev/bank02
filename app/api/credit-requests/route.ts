@@ -11,10 +11,10 @@ export async function GET() {
 
   const supabase = await createClient();
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', profileId).single();
-  const isAdmin = profile?.role === 'admin';
+  const canSeeAll = profile?.role === 'admin' || profile?.role === 'credit_officer';
 
   let query = supabase.from('credit_requests').select('*').order('submitted_at', { ascending: false });
-  if (!isAdmin) query = query.eq('user_id', profileId);
+  if (!canSeeAll) query = query.eq('user_id', profileId);
   const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

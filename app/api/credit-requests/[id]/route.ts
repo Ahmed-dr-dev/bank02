@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (data.user_id !== profileId) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', profileId).single();
-    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (profile?.role !== 'admin' && profile?.role !== 'credit_officer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return NextResponse.json(dbRowToCreditRequest(data as Parameters<typeof dbRowToCreditRequest>[0]));
@@ -31,19 +31,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (fetchErr || !existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', profileId).single();
-  const isAdmin = profile?.role === 'admin';
+  const canChangeStatus = profile?.role === 'admin' || profile?.role === 'credit_officer';
   const isOwner = existing.user_id === profileId;
 
   const body = await request.json();
 
-  if (body.status !== undefined && isAdmin) {
-    const status = body.status;
-    if (!['pending', 'approved', 'rejected', 'guarantees_required'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  if (canChangeStatus && (body.status !== undefined || body.notes !== undefined)) {
+    const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (body.status !== undefined) {
+      if (!['pending', 'approved', 'rejected', 'guarantees_required'].includes(body.status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+      }
+      updatePayload.status = body.status;
     }
+    if (body.notes !== undefined) updatePayload.notes = body.notes;
     const { data, error } = await supabase
       .from('credit_requests')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
@@ -53,7 +57,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       action: 'request_updated',
       entityType: 'credit_request',
       entityId: id,
-      details: { previousStatus: existing.status, newStatus: status },
+      details: { previousStatus: existing.status, newStatus: body.status ?? existing.status, notesUpdated: body.notes !== undefined },
     });
     return NextResponse.json(dbRowToCreditRequest(data as Parameters<typeof dbRowToCreditRequest>[0]));
   }

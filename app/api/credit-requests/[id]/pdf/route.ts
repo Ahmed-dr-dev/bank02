@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (data.user_id !== profileId) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', profileId).single();
-    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (profile?.role !== 'admin' && profile?.role !== 'credit_officer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const statusLabel =

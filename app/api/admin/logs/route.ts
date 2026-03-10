@@ -15,6 +15,20 @@ export async function GET(request: Request) {
   const limit = Math.min(100, Math.max(10, parseInt(searchParams.get('limit') ?? '50', 10)));
   const offset = (page - 1) * limit;
   const action = searchParams.get('action') || undefined;
+  const userSearch = searchParams.get('user')?.trim().toLowerCase() || undefined;
+
+  // If filtering by user, resolve matching profile IDs first
+  let filteredUserIds: string[] | undefined;
+  if (userSearch) {
+    const { data: matchProfiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .or(`email.ilike.%${userSearch}%,full_name.ilike.%${userSearch}%`);
+    filteredUserIds = (matchProfiles ?? []).map((p) => p.id);
+    if (!filteredUserIds.length) {
+      return NextResponse.json({ logs: [], total: 0, page, limit });
+    }
+  }
 
   let query = supabase
     .from('activity_logs')
@@ -23,13 +37,14 @@ export async function GET(request: Request) {
     .range(offset, offset + limit - 1);
 
   if (action) query = query.eq('action', action);
+  if (filteredUserIds?.length) query = query.in('user_id', filteredUserIds);
 
   const { data: rows, error, count } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const userIds = [...new Set((rows ?? []).map((r) => r.user_id).filter(Boolean))] as string[];
   const { data: profiles } = userIds.length
-    ? await supabase.from('profiles').select('id, email, full_name').in('id', userIds)
+    ? await supabase.from('profiles').select('id, email, full_name, role').in('id', userIds)
     : { data: [] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
@@ -38,6 +53,7 @@ export async function GET(request: Request) {
     user_id: r.user_id,
     user_email: r.user_id ? profileMap.get(r.user_id)?.email : null,
     user_name: r.user_id ? profileMap.get(r.user_id)?.full_name : null,
+    user_role: r.user_id ? profileMap.get(r.user_id)?.role : null,
     action: r.action,
     entity_type: r.entity_type,
     entity_id: r.entity_id,

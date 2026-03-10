@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const role = body.role;
-  if (!role || !['client', 'admin'].includes(role)) {
+  if (!role || !['client', 'admin', 'credit_officer'].includes(role)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   }
 

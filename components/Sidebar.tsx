@@ -8,11 +8,10 @@ export default function Sidebar() {
 
   const menuItems = [
     { href: '/admin/dashboard', label: 'Tableau de bord', icon: '📊' },
-    { href: '/admin/requests', label: 'Demandes', icon: '📝' },
     { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
-    { href: '/admin/settings', label: 'Scoring', icon: '⚙️' },
+    { href: '/admin/loan-types', label: 'Types de crédit', icon: '🏦' },
+    { href: '/admin/analytics', label: 'Analytiques', icon: '📈' },
     { href: '/admin/logs', label: 'Journal', icon: '📋' },
-    { href: '/admin/analytics', label: 'Analytics', icon: '📈' },
   ];
 
   return (
