@@ -53,8 +53,10 @@ export default function RequestChat({ requestId, currentRole }: RequestChatProps
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -76,8 +78,14 @@ export default function RequestChat({ requestId, currentRole }: RequestChatProps
     return () => clearInterval(interval);
   }, [fetchMessages]);
 
+  // Only auto-scroll inside the chat box when the user is already at the bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const area = scrollAreaRef.current;
+    if (!area) return;
+    const isAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
+    if (!isUserScrollingRef.current && isAtBottom) {
+      area.scrollTop = area.scrollHeight;
+    }
   }, [messages]);
 
   const send = async (content: string) => {
@@ -119,7 +127,15 @@ export default function RequestChat({ requestId, currentRole }: RequestChatProps
   return (
     <div className="flex flex-col" style={{ height: '480px' }}>
       {/* Messages scroll area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50"
+        onScroll={() => {
+          isUserScrollingRef.current = true;
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => { isUserScrollingRef.current = false; }, 1500);
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 select-none">
             <span className="text-5xl mb-3">💬</span>
@@ -166,7 +182,6 @@ export default function RequestChat({ requestId, currentRole }: RequestChatProps
             );
           })
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Quick replies */}
