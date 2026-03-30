@@ -7,13 +7,24 @@ interface StepFormProps {
   children: React.ReactNode[];
   onSubmit: (data: unknown) => void;
   locale?: 'fr' | 'en';
-  /** Si fourni, appelé avant de passer à l'étape suivante. Retourner false pour bloquer. */
   onValidateStep?: (stepIndex: number) => boolean | Promise<boolean>;
-  /** Désactive le bouton de soumission (ex: envoi en cours) */
   submitDisabled?: boolean;
+  /** Allow clicking any step indicator to jump directly to it (no validation gate) */
+  freeNavigation?: boolean;
+  /** Label override for the submit button */
+  submitLabel?: string;
 }
 
-export default function StepForm({ steps, children, onSubmit, locale = 'en', onValidateStep, submitDisabled = false }: StepFormProps) {
+export default function StepForm({
+  steps,
+  children,
+  onSubmit,
+  locale = 'en',
+  onValidateStep,
+  submitDisabled = false,
+  freeNavigation = false,
+  submitLabel,
+}: StepFormProps) {
   const isFr = locale === 'fr';
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
@@ -21,7 +32,7 @@ export default function StepForm({ steps, children, onSubmit, locale = 'en', onV
   const isLastStep = currentStep === steps.length - 1;
 
   const handleNext = async () => {
-    if (onValidateStep) {
+    if (!freeNavigation && onValidateStep) {
       const ok = await Promise.resolve(onValidateStep(currentStep));
       if (!ok) return;
     }
@@ -33,7 +44,11 @@ export default function StepForm({ steps, children, onSubmit, locale = 'en', onV
   };
 
   const handleBack = () => {
-    setCurrentStep(currentStep - 1);
+    setCurrentStep((s) => Math.max(0, s - 1));
+  };
+
+  const handleJump = (index: number) => {
+    if (freeNavigation) setCurrentStep(index);
   };
 
   return (
@@ -45,18 +60,28 @@ export default function StepForm({ steps, children, onSubmit, locale = 'en', onV
             <div key={index} className="flex-1 flex items-center">
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 font-bold transition-all ${
-                    index <= currentStep
+                  onClick={() => handleJump(index)}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 font-bold transition-all
+                    ${index === currentStep
                       ? 'border-blue-600 bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
-                      : 'border-gray-300 bg-white text-gray-400'
-                  }`}
+                      : index < currentStep
+                        ? 'border-blue-400 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 bg-white text-gray-400'
+                    }
+                    ${freeNavigation ? 'cursor-pointer hover:scale-110' : ''}
+                  `}
                 >
-                  {index + 1}
+                  {index < currentStep && !freeNavigation ? '✓' : index + 1}
                 </div>
                 <span
                   className={`mt-2 text-sm ${
-                    index <= currentStep ? 'text-blue-600 font-medium' : 'text-gray-400'
-                  }`}
+                    index === currentStep
+                      ? 'text-blue-600 font-semibold'
+                      : index < currentStep
+                        ? 'text-blue-400 font-medium'
+                        : 'text-gray-400'
+                  } ${freeNavigation ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleJump(index)}
                 >
                   {step}
                 </span>
@@ -64,7 +89,7 @@ export default function StepForm({ steps, children, onSubmit, locale = 'en', onV
               {index < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
+                    index < currentStep ? 'bg-blue-400' : 'bg-gray-300'
                   }`}
                 />
               )}
@@ -96,7 +121,9 @@ export default function StepForm({ steps, children, onSubmit, locale = 'en', onV
           disabled={submitDisabled}
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLastStep ? (isFr ? 'Soumettre la demande' : 'Submit Application') : (isFr ? 'Étape suivante' : 'Next Step')}
+          {isLastStep
+            ? (submitLabel ?? (isFr ? 'Soumettre la demande' : 'Submit Application'))
+            : (isFr ? 'Étape suivante' : 'Next Step')}
         </button>
       </div>
     </div>

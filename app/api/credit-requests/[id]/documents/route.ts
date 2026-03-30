@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionProfileId } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
-import { writeFile, mkdir, readdir, readFile } from 'fs/promises';
+import { writeFile, mkdir, readdir, readFile, unlink } from 'fs/promises';
 import path from 'path';
 
 async function checkAccess(requestId: string, profileId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -106,4 +106,31 @@ export async function POST(
   }
 
   return NextResponse.json({ saved });
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const profileId = await getSessionProfileId();
+  if (!profileId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const supabase = await createClient();
+  const id = (await params).id;
+  const allowed = await checkAccess(id, profileId, supabase);
+  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { searchParams } = new URL(request.url);
+  const fileParam = searchParams.get('file');
+  const name = path.basename(fileParam || '').replace(/\.\./g, '');
+  if (!name) return NextResponse.json({ error: 'Fichier requis' }, { status: 400 });
+
+  try {
+    const docDir = path.join(process.cwd(), 'doc', id);
+    const filePath = path.join(docDir, name);
+    await unlink(filePath);
+    return new NextResponse(null, { status: 204 });
+  } catch {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 }

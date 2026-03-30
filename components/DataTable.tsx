@@ -9,12 +9,13 @@ interface DataTableProps {
   showActions?: boolean;
   linkPrefix?: string;
   editPrefix?: string;
+  onEdit?: (request: CreditRequest) => void;
   onDelete?: (request: CreditRequest) => void;
   locale?: 'fr' | 'en';
   currency?: string;
 }
 
-export default function DataTable({ requests = [], showActions = true, linkPrefix = '/admin/requests', editPrefix, onDelete, locale = 'en', currency = 'MAD' }: DataTableProps) {
+export default function DataTable({ requests = [], showActions = true, linkPrefix = '/admin/requests', editPrefix, onEdit, onDelete, locale = 'en', currency = 'MAD' }: DataTableProps) {
   const isFr = locale === 'fr';
   const safeRequests = Array.isArray(requests) ? requests : [];
 
@@ -118,9 +119,19 @@ export default function DataTable({ requests = [], showActions = true, linkPrefi
                       {isFr ? 'Voir' : 'View Details'}
                     </Link>
                     {editPrefix && (
-                      <Link href={`${editPrefix}/${request?.id ?? ''}/edit`} className="text-amber-600 hover:text-amber-800 font-medium">
-                        {isFr ? 'Modifier' : 'Edit'}
-                      </Link>
+                      onEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(request as CreditRequest)}
+                          className="text-amber-600 hover:text-amber-800 font-medium"
+                        >
+                          {isFr ? 'Modifier' : 'Edit'}
+                        </button>
+                      ) : (
+                        <Link href={`${editPrefix}/${request?.id ?? ''}/edit`} className="text-amber-600 hover:text-amber-800 font-medium">
+                          {isFr ? 'Modifier' : 'Edit'}
+                        </Link>
+                      )
                     )}
                     {onDelete && (
                       <button
