@@ -351,6 +351,14 @@ export default function ClientRequestDetail() {
               >
                 Télécharger le récapitulatif (PDF)
               </a>
+              {request.status === 'pending' && (
+                <Link
+                  href={`/client/requests?edit=${request.id}`}
+                  className="block w-full text-center bg-amber-50 text-amber-900 border border-amber-200 px-4 py-2.5 rounded-lg hover:bg-amber-100 font-medium"
+                >
+                  Modifier le dossier (montant, durée, pièces…)
+                </Link>
+              )}
             </div>
           </div>
         </div>

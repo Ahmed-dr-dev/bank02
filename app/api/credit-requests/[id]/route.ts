@@ -65,14 +65,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (isOwner && existing.status === 'pending') {
     const fullName = [body.firstName, body.lastName].filter(Boolean).join(' ') || existing.client_name;
     const monthlyIncome = body.monthlyIncome != null ? Number(body.monthlyIncome) : existing.monthly_income;
-    const amount = body.creditAmount != null ? Number(body.creditAmount) : existing.amount;
-    const duration = body.duration != null ? Number(body.duration) : existing.duration;
+    const creditRaw = body.creditAmount;
+    const parsedAmount =
+      creditRaw !== undefined && creditRaw !== null && String(creditRaw).trim() !== '' ? Number(creditRaw) : NaN;
+    const amount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : existing.amount;
+    const durationRaw = body.duration;
+    const parsedDuration =
+      durationRaw !== undefined && durationRaw !== null && String(durationRaw).trim() !== '' ? Number(durationRaw) : NaN;
+    const duration = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : existing.duration;
     const updatePayload = {
       updated_at: new Date().toISOString(),
       client_name: fullName,
       client_email: body.email ?? existing.client_email,
-      amount: amount || existing.amount,
-      duration: duration || existing.duration,
+      amount,
+      duration,
       monthly_income: monthlyIncome,
       profession: body.profession ?? existing.profession,
       employment_status: body.employmentStatus ?? existing.employment_status,

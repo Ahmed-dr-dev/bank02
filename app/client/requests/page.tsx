@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable from '@/components/DataTable';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
@@ -38,6 +39,11 @@ function requestToFormData(r: CreditRequest): RequestFormData {
 }
 
 export default function ClientRequests() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editIdFromUrl = searchParams.get('edit');
+  const openedEditFromUrlRef = useRef<string | null>(null);
+
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -116,6 +122,7 @@ export default function ClientRequests() {
   };
 
   const closeEditModal = () => {
+    openedEditFromUrlRef.current = null;
     setEditingRequest(null);
     setFormData(null);
     setErrors({});
@@ -126,7 +133,7 @@ export default function ClientRequests() {
     setOpeningEdit(false);
   };
 
-  const openEditModal = async (request: CreditRequest) => {
+  const openEditModal = useCallback(async (request: CreditRequest) => {
     if (request.status !== 'pending') {
       if (typeof window !== 'undefined') {
         window.alert('Seules les demandes en attente peuvent être modifiées.');
@@ -157,7 +164,17 @@ export default function ClientRequests() {
     } finally {
       setOpeningEdit(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (loading || !editIdFromUrl) return;
+    if (openedEditFromUrlRef.current === editIdFromUrl) return;
+    const r = requests.find((x) => x.id === editIdFromUrl);
+    if (!r) return;
+    openedEditFromUrlRef.current = editIdFromUrl;
+    void openEditModal(r);
+    router.replace('/client/requests', { scroll: false });
+  }, [loading, editIdFromUrl, requests, router, openEditModal]);
 
   const steps = ['État civil', 'Professionnel', 'Revenus et charges', 'Détails du crédit', 'Documents'];
 
@@ -182,6 +199,14 @@ export default function ClientRequests() {
     setSubmitError('');
     setSubmitting(true);
     try {
+      const merged: Record<string, string> = {};
+      for (let i = 0; i <= 3; i++) Object.assign(merged, validateStep(formData, i));
+      if (Object.keys(merged).length > 0) {
+        setErrors(merged);
+        setSubmitError('Corrigez les champs en erreur avant d’enregistrer (y compris le montant demandé).');
+        return;
+      }
+
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -365,6 +390,24 @@ export default function ClientRequests() {
             {openingEdit || !formData ? (
               <p className="text-gray-600 py-8">Chargement des données actuelles...</p>
             ) : (
+              <>
+              <div className="sticky top-0 z-20 mb-6 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+                <p className="mb-3 text-sm font-semibold text-gray-900">Montant du crédit demandé</p>
+                <div className="max-w-md">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Montant demandé (TND) *</label>
+                  <input
+                    type="number"
+                    min={1000}
+                    step={1000}
+                    value={formData.creditAmount ?? ''}
+                    onChange={update('creditAmount')}
+                    className={inputClass('creditAmount')}
+                    placeholder="Ex. 250000"
+                  />
+                  {err('creditAmount') && <p className="mt-1 text-sm text-red-600">{err('creditAmount')}</p>}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">Ce champ est le même qu’à l’étape « Détails du crédit » ; la valeur est enregistrée avec le reste du formulaire.</p>
+              </div>
               <StepForm steps={steps} onSubmit={handleEditSubmit} locale="fr" submitDisabled={submitting} freeNavigation submitLabel={submitting ? 'Enregistrement...' : 'Enregistrer les modifications'}>
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Informations personnelles</h2>
@@ -554,6 +597,7 @@ export default function ClientRequests() {
                 <FileUpload label="Autres pièces (optionnel)" accept="*" multiple onFilesChange={onDocumentFiles('other')} />
               </div>
               </StepForm>
+              </>
             )}
           </div>
         </div>
