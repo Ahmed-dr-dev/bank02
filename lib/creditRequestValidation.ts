@@ -121,3 +121,20 @@ export function validateStep(data: RequestFormData, step: number): Record<string
     default: return {};
   }
 }
+
+/**
+ * Validation à l’enregistrement d’une demande existante : l’API ne met pas à jour
+ * date de naissance / CIN / téléphone sur credit_requests (profil ou nouvelle demande).
+ * On ne contrôle que l’identité minimale + les étapes métier (2–4).
+ */
+export function validateEditCreditRequestSubmit(data: RequestFormData): Record<string, string> {
+  const err: Record<string, string> = {};
+  if (!data.firstName?.trim()) err.firstName = 'Prénom requis';
+  if (!data.lastName?.trim()) err.lastName = 'Nom requis';
+  if (!data.email?.trim()) err.email = 'E-mail requis';
+  else if (!EMAIL_REGEX.test(data.email)) err.email = 'E-mail invalide';
+  Object.assign(err, validateStep2Pro(data));
+  Object.assign(err, validateStep3Revenus(data));
+  Object.assign(err, validateStep4Credit(data));
+  return err;
+}

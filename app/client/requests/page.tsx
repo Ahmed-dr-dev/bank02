@@ -6,7 +6,7 @@ import DataTable from '@/components/DataTable';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import type { CreditRequest } from '@/lib/mockData';
-import { validateStep, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
+import { validateStep, validateEditCreditRequestSubmit, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
   const parts = (r.clientName || '').trim().split(/\s+/);
@@ -154,8 +154,29 @@ export default function ClientRequests() {
       const reqData = reqRes.ok ? ((await reqRes.json()) as CreditRequest) : request;
       const docData = docRes.ok ? await docRes.json() : { files: [] };
 
+      let fd = requestToFormData(reqData);
+      try {
+        const pr = await fetch('/api/profile', { credentials: 'include' });
+        if (pr.ok) {
+          const p = (await pr.json()) as {
+            phone?: string | null;
+            date_of_birth?: string | null;
+            cin?: string | null;
+          };
+          const dob = p.date_of_birth ? String(p.date_of_birth).slice(0, 10) : '';
+          fd = {
+            ...fd,
+            phone: fd.phone?.trim() || p.phone || '',
+            dateOfBirth: fd.dateOfBirth?.trim() || dob,
+            cin: fd.cin?.trim() || p.cin || '',
+          };
+        }
+      } catch {
+        /* profil optionnel */
+      }
+
       setEditingRequest(reqData);
-      setFormData(requestToFormData(reqData));
+      setFormData(fd);
       setExistingFiles(Array.isArray(docData?.files) ? docData.files : []);
     } catch {
       setEditingRequest(request);
@@ -199,11 +220,10 @@ export default function ClientRequests() {
     setSubmitError('');
     setSubmitting(true);
     try {
-      const merged: Record<string, string> = {};
-      for (let i = 0; i <= 3; i++) Object.assign(merged, validateStep(formData, i));
+      const merged = validateEditCreditRequestSubmit(formData);
       if (Object.keys(merged).length > 0) {
         setErrors(merged);
-        setSubmitError('Corrigez les champs en erreur avant d’enregistrer (y compris le montant demandé).');
+        setSubmitError('Vérifiez les champs surlignés (montant, durée, revenus, situation pro…).');
         return;
       }
 
