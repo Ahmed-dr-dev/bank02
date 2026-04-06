@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { CreditRequest } from '@/lib/mockData';
@@ -26,7 +26,7 @@ function formatDate(s: string) {
   return new Date(s).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function AgentRequests() {
+function AgentRequests() {
   const searchParams = useSearchParams();
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,5 +227,22 @@ export default function AgentRequests() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AgentRequestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3" />
+            <div className="h-64 bg-gray-100 rounded" />
+          </div>
+        </div>
+      }
+    >
+      <AgentRequests />
+    </Suspense>
   );
 }

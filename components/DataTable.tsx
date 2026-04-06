@@ -2,7 +2,20 @@
 
 import Link from 'next/link';
 import { CreditRequest } from '@/lib/mockData';
+import { computeCreditScoring } from '@/lib/creditScoring';
 import ScoreBadge from './ScoreBadge';
+
+function rowScoring(request: CreditRequest | undefined) {
+  return computeCreditScoring({
+    monthlyIncome: Number(request?.monthlyIncome) || 0,
+    additionalIncome: Number(request?.additionalIncome) || 0,
+    rentMortgage: Number(request?.rentMortgage) || 0,
+    otherCharges: Number(request?.otherCharges) || 0,
+    loanPayment: Number(request?.loanPayment) || 0,
+    creditAmount: Number(request?.amount) || 0,
+    durationMonths: Number(request?.duration) || 0,
+  });
+}
 
 interface DataTableProps {
   requests: CreditRequest[];
@@ -88,7 +101,9 @@ export default function DataTable({ requests = [], showActions = true, linkPrefi
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {safeRequests.map((request, index) => (
+          {safeRequests.map((request, index) => {
+            const sc = rowScoring(request);
+            return (
             <tr key={request?.id ?? `row-${index}`} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div>
@@ -103,10 +118,7 @@ export default function DataTable({ requests = [], showActions = true, linkPrefi
                 {request?.duration ?? 0} {isFr ? 'mois' : 'months'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <ScoreBadge
-                  score={Number(request?.score) || 0}
-                  category={request?.scoreCategory ?? 'medium'}
-                />
+                <ScoreBadge score={sc.totalScore} category={sc.category} />
               </td>
               <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge((request?.status ?? 'pending') as CreditRequest['status'])}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -146,7 +158,8 @@ export default function DataTable({ requests = [], showActions = true, linkPrefi
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import { validateStep, type RequestFormData } from '@/lib/creditRequestValidation';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
 import type { CreditRequest } from '@/lib/mockData';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
@@ -273,11 +274,11 @@ export default function EditRequestPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
               <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
                 <option value="">Choisir</option>
-                <option value="Immobilier">Immobilier</option>
-                <option value="Véhicule">Véhicule</option>
-                <option value="Virement de salaire">Virement de salaire</option>
-                <option value="Caution personnelle">Caution personnelle</option>
-                <option value="Aucune">Aucune</option>
+                {GUARANTEE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {guaranteeSelectOptionLabel(opt)}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="md:col-span-2">

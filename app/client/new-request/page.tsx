@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import { validateStep, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
 
 const emptyForm: RequestFormData = {
   firstName: '',
@@ -18,11 +19,11 @@ const emptyForm: RequestFormData = {
   employer: '',
   workAddress: '',
   monthlyIncome: '',
-  additionalIncome: '0',
-  rentMortgage: '0',
-  otherCharges: '0',
+  additionalIncome: '',
+  rentMortgage: '',
+  otherCharges: '',
   existingLoans: '',
-  loanPayment: '0',
+  loanPayment: '',
   creditAmount: '',
   duration: '',
   creditPurpose: '',
@@ -130,12 +131,12 @@ export default function NewRequest() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
-              <input type="text" value={formData.firstName ?? ''} onChange={update('firstName')} className={inputClass('firstName')} placeholder="Sirine" />
+              <input type="text" value={formData.firstName ?? ''} onChange={update('firstName')} className={inputClass('firstName')} />
               {err('firstName') && <p className="text-red-500 text-sm mt-1">{err('firstName')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
-              <input type="text" value={formData.lastName ?? ''} onChange={update('lastName')} className={inputClass('lastName')} placeholder="Nciri" />
+              <input type="text" value={formData.lastName ?? ''} onChange={update('lastName')} className={inputClass('lastName')} />
               {err('lastName') && <p className="text-red-500 text-sm mt-1">{err('lastName')}</p>}
             </div>
             <div>
@@ -145,17 +146,17 @@ export default function NewRequest() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">CIN (carte d&apos;identité nationale)</label>
-              <input type="text" value={formData.cin ?? ''} onChange={update('cin')} className={inputClass('cin')} placeholder="Ex. 12345678" maxLength={CIN_MAX_LENGTH} />
+              <input type="text" value={formData.cin ?? ''} onChange={update('cin')} className={inputClass('cin')} maxLength={CIN_MAX_LENGTH} />
               {err('cin') && <p className="text-red-500 text-sm mt-1">{err('cin')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone (Tunisie)</label>
-              <input type="tel" value={formData.phone ?? ''} onChange={update('phone')} className={inputClass('phone')} placeholder="+216 XX XXX XXX" />
+              <input type="tel" value={formData.phone ?? ''} onChange={update('phone')} className={inputClass('phone')} />
               {err('phone') && <p className="text-red-500 text-sm mt-1">{err('phone')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-              <input type="email" value={formData.email ?? ''} onChange={update('email')} className={inputClass('email')} placeholder="sirine.nciri@exemple.com" />
+              <input type="email" value={formData.email ?? ''} onChange={update('email')} className={inputClass('email')} />
               {err('email') && <p className="text-red-500 text-sm mt-1">{err('email')}</p>}
             </div>
           </div>
@@ -178,17 +179,17 @@ export default function NewRequest() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
-              <input type="text" value={formData.profession ?? ''} onChange={update('profession')} className={inputClass('profession')} placeholder="Ingénieur informatique" />
+              <input type="text" value={formData.profession ?? ''} onChange={update('profession')} className={inputClass('profession')} />
               {err('profession') && <p className="text-red-500 text-sm mt-1">{err('profession')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
-              <input type="text" value={formData.employer ?? ''} onChange={update('employer')} className={inputClass('employer')} placeholder="Nom de l&apos;entreprise" />
+              <input type="text" value={formData.employer ?? ''} onChange={update('employer')} className={inputClass('employer')} />
               {err('employer') && <p className="text-red-500 text-sm mt-1">{err('employer')}</p>}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Adresse professionnelle</label>
-              <input type="text" value={formData.workAddress ?? ''} onChange={update('workAddress')} className={inputClass('workAddress')} placeholder="Rue, ville, code postal" />
+              <input type="text" value={formData.workAddress ?? ''} onChange={update('workAddress')} className={inputClass('workAddress')} />
             </div>
           </div>
         </div>
@@ -199,21 +200,21 @@ export default function NewRequest() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND) *</label>
-              <input type="number" min={0} step={100} value={formData.monthlyIncome ?? ''} onChange={update('monthlyIncome')} className={inputClass('monthlyIncome')} placeholder="15000" />
+              <input type="number" min={0} step={100} value={formData.monthlyIncome ?? ''} onChange={update('monthlyIncome')} className={inputClass('monthlyIncome')} />
               {err('monthlyIncome') && <p className="text-red-500 text-sm mt-1">{err('monthlyIncome')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Autres revenus (TND)</label>
-              <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} placeholder="0" />
+              <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loyer / Prêt (TND/mois)</label>
-              <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} placeholder="3000" />
+              <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} />
               {err('rentMortgage') && <p className="text-red-500 text-sm mt-1">{err('rentMortgage')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Autres charges mensuelles (TND)</label>
-              <input type="number" min={0} value={formData.otherCharges ?? ''} onChange={update('otherCharges')} className={inputClass('otherCharges')} placeholder="2000" />
+              <input type="number" min={0} value={formData.otherCharges ?? ''} onChange={update('otherCharges')} className={inputClass('otherCharges')} />
               {err('otherCharges') && <p className="text-red-500 text-sm mt-1">{err('otherCharges')}</p>}
             </div>
             <div>
@@ -228,7 +229,7 @@ export default function NewRequest() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Mensualité des crédits (TND)</label>
-              <input type="number" min={0} value={formData.loanPayment ?? ''} onChange={update('loanPayment')} className={inputClass('loanPayment')} placeholder="0" />
+              <input type="number" min={0} value={formData.loanPayment ?? ''} onChange={update('loanPayment')} className={inputClass('loanPayment')} />
               {err('loanPayment') && <p className="text-red-500 text-sm mt-1">{err('loanPayment')}</p>}
             </div>
           </div>
@@ -240,12 +241,12 @@ export default function NewRequest() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND) *</label>
-              <input type="number" min={0} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} placeholder="250000" />
+              <input type="number" min={0} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} />
               {err('creditAmount') && <p className="text-red-500 text-sm mt-1">{err('creditAmount')}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois) *</label>
-              <input type="number" min={12} max={300} value={formData.duration ?? ''} onChange={update('duration')} className={inputClass('duration')} placeholder="120" />
+              <input type="number" min={12} max={300} value={formData.duration ?? ''} onChange={update('duration')} className={inputClass('duration')} />
               {err('duration') && <p className="text-red-500 text-sm mt-1">{err('duration')}</p>}
             </div>
             <div>
@@ -265,17 +266,17 @@ export default function NewRequest() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
               <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
                 <option value="">Choisir</option>
-                <option value="Immobilier">Immobilier</option>
-                <option value="Véhicule">Véhicule</option>
-                <option value="Virement de salaire">Virement de salaire</option>
-                <option value="Caution personnelle">Caution personnelle</option>
-                <option value="Aucune">Aucune</option>
+                {GUARANTEE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {guaranteeSelectOptionLabel(opt)}
+                  </option>
+                ))}
               </select>
               {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>
-              <textarea rows={4} value={formData.notes ?? ''} onChange={update('notes')} className={inputClass('notes')} placeholder="Précisions éventuelles..." />
+              <textarea rows={4} value={formData.notes ?? ''} onChange={update('notes')} className={inputClass('notes')} />
             </div>
           </div>
         </div>
@@ -283,11 +284,11 @@ export default function NewRequest() {
         {/* Étape 5 : Documents */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Téléverser les pièces</h2>
-          <FileUpload label="CIN (recto et verso)" accept="image/*" onFilesChange={onDocumentFiles('cin')} />
-          <FileUpload label="Bulletins de salaire (3 derniers mois)" accept=".pdf,.doc,.docx" multiple onFilesChange={onDocumentFiles('paySlips')} />
-          <FileUpload label="Relevés bancaires (6 derniers mois)" accept=".pdf" multiple onFilesChange={onDocumentFiles('bankStatements')} />
-          <FileUpload label="Justificatif de domicile" accept=".pdf,image/*" onFilesChange={onDocumentFiles('domicile')} />
-          <FileUpload label="Autres pièces (optionnel)" accept="*" multiple onFilesChange={onDocumentFiles('other')} />
+          <FileUpload label="CIN (recto et verso)" accept="image/*" hideUploadHints onFilesChange={onDocumentFiles('cin')} />
+          <FileUpload label="Bulletins de salaire (3 derniers mois)" accept=".pdf,.doc,.docx" multiple hideUploadHints onFilesChange={onDocumentFiles('paySlips')} />
+          <FileUpload label="Relevés bancaires (6 derniers mois)" accept=".pdf" multiple hideUploadHints onFilesChange={onDocumentFiles('bankStatements')} />
+          <FileUpload label="Justificatif de domicile" accept=".pdf,image/*" hideUploadHints onFilesChange={onDocumentFiles('domicile')} />
+          <FileUpload label="Autres pièces (optionnel)" accept="*" multiple hideUploadHints onFilesChange={onDocumentFiles('other')} />
         </div>
       </StepForm>
     </div>

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getSessionProfileId } from '@/lib/session';
 import { logActivity } from '@/lib/activityLog';
 import { dbRowToCreditRequest } from '@/lib/db';
+import { scoreAndCategoryForDb } from '@/lib/creditScoring';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const profileId = await getSessionProfileId();
@@ -73,6 +74,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const parsedDuration =
       durationRaw !== undefined && durationRaw !== null && String(durationRaw).trim() !== '' ? Number(durationRaw) : NaN;
     const duration = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : existing.duration;
+    const additionalIncome = body.additionalIncome != null ? Number(body.additionalIncome) : existing.additional_income;
+    const rentMortgage = body.rentMortgage != null ? Number(body.rentMortgage) : existing.rent_mortgage;
+    const otherCharges = body.otherCharges != null ? Number(body.otherCharges) : existing.other_charges;
+    const loanPayment = body.loanPayment != null ? Number(body.loanPayment) : existing.loan_payment;
+
+    const { score, score_category } = scoreAndCategoryForDb({
+      monthly_income: monthlyIncome,
+      additional_income: additionalIncome,
+      rent_mortgage: rentMortgage,
+      other_charges: otherCharges,
+      loan_payment: loanPayment,
+      amount,
+      duration,
+    });
+
     const updatePayload = {
       updated_at: new Date().toISOString(),
       client_name: fullName,
@@ -85,14 +101,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       employer: body.employer ?? existing.employer,
       years_experience: body.yearsExperience != null ? Number(body.yearsExperience) : existing.years_experience,
       work_address: body.workAddress ?? existing.work_address,
-      additional_income: body.additionalIncome != null ? Number(body.additionalIncome) : existing.additional_income,
-      rent_mortgage: body.rentMortgage != null ? Number(body.rentMortgage) : existing.rent_mortgage,
-      other_charges: body.otherCharges != null ? Number(body.otherCharges) : existing.other_charges,
+      additional_income: additionalIncome,
+      rent_mortgage: rentMortgage,
+      other_charges: otherCharges,
       existing_loans: body.existingLoans ?? existing.existing_loans,
-      loan_payment: body.loanPayment != null ? Number(body.loanPayment) : existing.loan_payment,
+      loan_payment: loanPayment,
       credit_purpose: body.creditPurpose ?? existing.credit_purpose,
       guarantee_type: body.guaranteeType ?? existing.guarantee_type,
       notes: body.notes ?? existing.notes,
+      score,
+      score_category,
     };
     const { data, error } = await supabase.from('credit_requests').update(updatePayload).eq('id', id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

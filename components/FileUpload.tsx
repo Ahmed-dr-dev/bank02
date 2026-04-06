@@ -8,9 +8,11 @@ interface FileUploadProps {
   multiple?: boolean;
   /** Callback with selected File(s); used to collect uploads for submit */
   onFilesChange?: (files: File[]) => void;
+  /** Masquer les textes d’aide sous la zone de dépôt */
+  hideUploadHints?: boolean;
 }
 
-export default function FileUpload({ label, accept = '*', multiple = false, onFilesChange }: FileUploadProps) {
+export default function FileUpload({ label, accept = '*', multiple = false, onFilesChange, hideUploadHints = false }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,10 +40,14 @@ export default function FileUpload({ label, accept = '*', multiple = false, onFi
           className="cursor-pointer flex flex-col items-center"
         >
           <div className="text-4xl mb-2">📁</div>
-          <p className="text-sm text-gray-600">Cliquez pour choisir ou glisser-déposer</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {accept === 'image/*' ? 'PNG, JPG, PDF' : accept.includes('pdf') ? 'PDF, DOC, DOCX' : 'Tous types'}
-          </p>
+          {!hideUploadHints && (
+            <>
+              <p className="text-sm text-gray-600">Cliquez pour choisir ou glisser-déposer</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {accept === 'image/*' ? 'PNG, JPG, PDF' : accept.includes('pdf') ? 'PDF, DOC, DOCX' : 'Tous types'}
+              </p>
+            </>
+          )}
         </label>
       </div>
       {files.length > 0 && (

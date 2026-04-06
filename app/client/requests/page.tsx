@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable from '@/components/DataTable';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import type { CreditRequest } from '@/lib/mockData';
 import { validateStep, validateEditCreditRequestSubmit, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
   const parts = (r.clientName || '').trim().split(/\s+/);
@@ -38,7 +39,7 @@ function requestToFormData(r: CreditRequest): RequestFormData {
   };
 }
 
-export default function ClientRequests() {
+function ClientRequests() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editIdFromUrl = searchParams.get('edit');
@@ -566,11 +567,11 @@ export default function ClientRequests() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
                     <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
                       <option value="">Choisir</option>
-                      <option value="Immobilier">Immobilier</option>
-                      <option value="Véhicule">Véhicule</option>
-                      <option value="Virement de salaire">Virement de salaire</option>
-                      <option value="Caution personnelle">Caution personnelle</option>
-                      <option value="Aucune">Aucune</option>
+                      {GUARANTEE_TYPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {guaranteeSelectOptionLabel(opt)}
+                        </option>
+                      ))}
                     </select>
                     {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
                   </div>
@@ -623,5 +624,23 @@ export default function ClientRequests() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientRequestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3" />
+            <div className="h-4 bg-gray-100 rounded w-1/4" />
+            <div className="h-48 bg-gray-100 rounded" />
+          </div>
+        </div>
+      }
+    >
+      <ClientRequests />
+    </Suspense>
   );
 }

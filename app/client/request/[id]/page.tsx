@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ScoreBadge from '@/components/ScoreBadge';
 import StatusTimeline from '@/components/StatusTimeline';
 import RequestChat from '@/components/RequestChat';
 import type { CreditRequest } from '@/lib/mockData';
+import { describeGuaranteeForDisplay } from '@/lib/guaranteeTypes';
+import {
+  computeCreditScoring,
+  type CreditScoringResult,
+  SCORING_ANNUAL_RATE_INDICATIVE,
+  SCORING_DOCUMENTATION_FR,
+} from '@/lib/creditScoring';
 
 function formatTND(n: number): string {
   return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' TND';
@@ -58,6 +65,19 @@ export default function ClientRequestDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const scoring = useMemo(() => {
+    if (!request) return null;
+    return computeCreditScoring({
+      monthlyIncome: Number(request.monthlyIncome) || 0,
+      additionalIncome: Number(request.additionalIncome) || 0,
+      rentMortgage: Number(request.rentMortgage) || 0,
+      otherCharges: Number(request.otherCharges) || 0,
+      loanPayment: Number(request.loanPayment) || 0,
+      creditAmount: Number(request.amount) || 0,
+      durationMonths: Number(request.duration) || 0,
+    });
+  }, [request]);
+
   if (loading) {
     return (
       <div className="p-8">
@@ -78,6 +98,16 @@ export default function ClientRequestDetail() {
       </div>
     );
   }
+
+  const sc: CreditScoringResult = scoring ?? computeCreditScoring({
+    monthlyIncome: Number(request.monthlyIncome) || 0,
+    additionalIncome: Number(request.additionalIncome) || 0,
+    rentMortgage: Number(request.rentMortgage) || 0,
+    otherCharges: Number(request.otherCharges) || 0,
+    loanPayment: Number(request.loanPayment) || 0,
+    creditAmount: Number(request.amount) || 0,
+    durationMonths: Number(request.duration) || 0,
+  });
 
   const statusLabel =
     request.status === 'approved'
@@ -146,64 +176,112 @@ export default function ClientRequestDetail() {
                 <LabelValue label="Montant demandé" value={formatTND(request.amount)} />
                 <LabelValue label="Durée" value={`${request.duration} mois (${Math.round(request.duration / 12)} an(s))`} />
                 <LabelValue label="Objet du crédit" value={request.creditPurpose} hideIfEmpty />
-                <LabelValue label="Type de garantie" value={request.guaranteeType} hideIfEmpty />
-                <LabelValue label="Score" value={<ScoreBadge score={request.score} category={request.scoreCategory} size="md" />} />
+                <LabelValue label="Type de garantie" value={describeGuaranteeForDisplay(request.guaranteeType)} hideIfEmpty />
+                <LabelValue
+                  label="Score"
+                  value={<ScoreBadge score={sc.totalScore} category={sc.category} size="md" />}
+                />
               </div>
             </div>
           </section>
 
-          {/* Indicateurs de scoring */}
+          {/* Scoring détaillé */}
           <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Indicateurs de scoring</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Score et capacité financière</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Calcul objectif sur 100 — revenus, charges, endettement et poids du crédit demandé. La profession n’entre pas dans le calcul.
+              </p>
             </div>
-            <div className="p-6">
-              <div className="flex flex-wrap items-center gap-8 mb-6">
-                <div className="flex items-center gap-4">
-                  <ScoreBadge score={request.score} category={request.scoreCategory} size="lg" />
-                  <div>
-                    <p className="text-sm text-gray-500">Score global</p>
-                    <p className="text-xs text-gray-600 max-w-[200px]">
-                      {request.scoreCategory === 'high'
-                        ? 'Profil favorable pour l\'octroi de crédit.'
-                        : request.scoreCategory === 'medium'
-                          ? 'Profil correct ; des garanties peuvent être demandées.'
-                          : 'Profil à risque ; compléments ou garanties requis.'}
-                    </p>
-                  </div>
-                </div>
-                <div className="h-16 w-px bg-gray-200 hidden sm:block" />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-100">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Revenu mensuel</p>
-                    <p className="font-semibold text-gray-900">{formatTND(request.monthlyIncome)}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-100">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Charges mensuelles</p>
-                    <p className="font-semibold text-gray-900">
-                      {formatTND((request.rentMortgage ?? 0) + (request.otherCharges ?? 0) + (request.loanPayment ?? 0))}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-100">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Taux d&apos;endettement</p>
-                    <p className="font-semibold text-gray-900">
-                      {request.monthlyIncome > 0
-                        ? Math.round(((request.rentMortgage ?? 0) + (request.otherCharges ?? 0) + (request.loanPayment ?? 0)) / request.monthlyIncome * 100) + ' %'
-                        : '—'}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-100">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Montant / 100</p>
-                    <p className="font-semibold text-gray-900">{request.score}/100</p>
-                  </div>
+            <div className="p-6 space-y-6">
+              <div className="flex flex-wrap items-start gap-6">
+                <ScoreBadge score={sc.totalScore} category={sc.category} size="lg" />
+                <div className="flex-1 min-w-[200px]">
+                  <p className="text-sm font-medium text-gray-900">Interprétation</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {sc.category === 'high'
+                      ? 'Profil favorable : revenus et capacité d’endettement cohérents avec la demande.'
+                      : sc.category === 'medium'
+                        ? 'Profil intermédiaire : le dossier peut nécessiter des garanties ou des précisions.'
+                        : 'Profil plus contraint : charges ou montant demandé élevés par rapport aux revenus déclarés.'}
+                  </p>
                 </div>
               </div>
-              <div className="pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500">
-                  Le score est calculé à partir de votre situation professionnelle, de vos revenus et de votre capacité d&apos;endettement. 
-                  Il guide l&apos;instruction du dossier et les conditions d&apos;octroi.
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-gray-100 bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Revenu net principal / mois</p>
+                  <p className="font-semibold text-gray-900">{formatTND(request.monthlyIncome)}</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Autres revenus / mois</p>
+                  <p className="font-semibold text-gray-900">{formatTND(request.additionalIncome ?? 0)}</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Charges fixes (hors nouveau crédit)</p>
+                  <p className="font-semibold text-gray-900">{formatTND(sc.fixedMonthlyCharges)}</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Mensualité estimée (nouveau crédit)</p>
+                  <p className="font-semibold text-gray-900">{formatTND(sc.estimatedNewMonthlyPayment)}</p>
+                  <p className="text-[10px] text-gray-500 mt-1 leading-tight">
+                    Hypothèse : taux annuel indicatif {(SCORING_ANNUAL_RATE_INDICATIVE * 100).toFixed(0)} %, durée {request.duration} mois (non contractuel).
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-4 py-3">
+                <p className="text-sm font-medium text-gray-900">Taux d’endettement retenu pour le score</p>
+                <p className="text-2xl font-bold text-blue-900 mt-1">
+                  {sc.debtRatioAfterNewLoanPercent != null ? `${sc.debtRatioAfterNewLoanPercent} %` : '—'}
+                </p>
+                <p className="text-xs text-gray-600 mt-2">
+                  Formule : (charges fixes + mensualité estimée du nouveau crédit) ÷ (revenu principal + autres revenus). Référence courante : rester sous 40 %.
                 </p>
               </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Détail des points (sur 100)</h3>
+                <ul className="space-y-4">
+                  {sc.components.map((c) => (
+                    <li key={c.id} className="border border-gray-100 rounded-lg p-4 bg-gray-50/80">
+                      <div className="flex flex-wrap justify-between gap-2 items-center mb-2">
+                        <span className="font-medium text-gray-900">{c.title}</span>
+                        <span className="text-sm font-semibold text-blue-800">
+                          {c.points} / {c.maxPoints} pts
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-200 overflow-hidden mb-2">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all"
+                          style={{ width: `${c.maxPoints > 0 ? Math.min(100, (c.points / c.maxPoints) * 100) : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{c.detailFr}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <details className="group rounded-xl border border-gray-200 bg-white open:bg-gray-50/50">
+                <summary className="cursor-pointer list-none px-4 py-3 font-semibold text-gray-900 flex items-center justify-between gap-2">
+                  <span>{SCORING_DOCUMENTATION_FR.titre}</span>
+                  <span className="text-gray-400 text-sm group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="px-4 pb-4 pt-0 space-y-4 text-sm text-gray-700 border-t border-gray-100">
+                  <p className="pt-3 leading-relaxed">{SCORING_DOCUMENTATION_FR.introduction}</p>
+                  {SCORING_DOCUMENTATION_FR.blocs.map((b) => (
+                    <div key={b.sousTitre}>
+                      <h4 className="font-semibold text-gray-900 mb-2">{b.sousTitre}</h4>
+                      <ul className="list-disc pl-5 space-y-1.5">
+                        {b.textes.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
           </section>
 

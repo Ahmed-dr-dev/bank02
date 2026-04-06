@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 
+/** Champs éditables + métadonnées renvoyées par GET /api/profile (hors password_hash). */
 type ProfileData = {
+  id?: string;
   full_name: string | null;
   email: string | null;
   phone: string | null;
@@ -14,7 +16,11 @@ type ProfileData = {
   country: string | null;
   profession: string | null;
   employer: string | null;
+  years_experience: number | null;
   monthly_income: number | null;
+  role?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 const EMPTY_PROFILE: ProfileData = {
@@ -29,8 +35,47 @@ const EMPTY_PROFILE: ProfileData = {
   country: '',
   profession: '',
   employer: '',
+  years_experience: null,
   monthly_income: null,
 };
+
+function toDateInputValue(v: unknown): string {
+  if (v == null || v === '') return '';
+  const s = String(v);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function toNumberOrNull(v: unknown): number | null {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Mappe la réponse Supabase/JSON vers l’état formulaire (tous les champs utiles). */
+function normalizeProfileFromApi(raw: Record<string, unknown>): ProfileData {
+  return {
+    id: typeof raw.id === 'string' ? raw.id : undefined,
+    full_name: raw.full_name != null ? String(raw.full_name) : '',
+    email: raw.email != null ? String(raw.email) : '',
+    phone: raw.phone != null ? String(raw.phone) : '',
+    date_of_birth: toDateInputValue(raw.date_of_birth),
+    cin: raw.cin != null ? String(raw.cin) : '',
+    address: raw.address != null ? String(raw.address) : '',
+    city: raw.city != null ? String(raw.city) : '',
+    postal_code: raw.postal_code != null ? String(raw.postal_code) : '',
+    country: raw.country != null ? String(raw.country) : '',
+    profession: raw.profession != null ? String(raw.profession) : '',
+    employer: raw.employer != null ? String(raw.employer) : '',
+    years_experience: toNumberOrNull(raw.years_experience),
+    monthly_income: toNumberOrNull(raw.monthly_income),
+    role: raw.role != null ? String(raw.role) : null,
+    created_at: raw.created_at != null ? String(raw.created_at) : null,
+    updated_at: raw.updated_at != null ? String(raw.updated_at) : null,
+  };
+}
 
 function splitName(fullName: string | null): { firstName: string; lastName: string } {
   const value = (fullName ?? '').trim();
@@ -38,6 +83,12 @@ function splitName(fullName: string | null): { firstName: string; lastName: stri
   const parts = value.split(/\s+/);
   return { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' ') };
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  client: 'Client',
+  admin: 'Administrateur',
+  credit_officer: 'Chargé de crédit',
+};
 
 export default function ClientProfile() {
   const [profile, setProfile] = useState<ProfileData>(EMPTY_PROFILE);
@@ -55,11 +106,8 @@ export default function ClientProfile() {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Impossible de charger le profil.');
         }
-        const data = (await res.json()) as ProfileData;
-        setProfile({
-          ...EMPTY_PROFILE,
-          ...data,
-        });
+        const raw = (await res.json()) as Record<string, unknown>;
+        setProfile(normalizeProfileFromApi(raw));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Impossible de charger le profil.');
       } finally {
@@ -78,12 +126,14 @@ export default function ClientProfile() {
     return `${a}${b}`.trim().toUpperCase() || fallback.toUpperCase();
   }, [firstName, lastName, profile.email]);
 
+  const numericKeys = new Set<keyof ProfileData>(['monthly_income', 'years_experience']);
+
   const updateField =
     (key: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setProfile((prev) => ({
         ...prev,
-        [key]: key === 'monthly_income' ? (value === '' ? null : Number(value)) : value,
+        [key]: numericKeys.has(key) ? (value === '' ? null : Number(value)) : value,
       }));
       if (success) setSuccess('');
     };
@@ -106,23 +156,6 @@ export default function ClientProfile() {
     if (success) setSuccess('');
   };
 
-  const handleReset = () => {
-    setLoading(true);
-    setSuccess('');
-    setError('');
-    fetch('/api/profile', { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Impossible de recharger le profil.');
-        }
-        return res.json();
-      })
-      .then((data: ProfileData) => setProfile({ ...EMPTY_PROFILE, ...data }))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Impossible de recharger le profil.'))
-      .finally(() => setLoading(false));
-  };
-
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -140,6 +173,7 @@ export default function ClientProfile() {
         country: profile.country?.trim() || null,
         profession: profile.profession?.trim() || null,
         employer: profile.employer?.trim() || null,
+        years_experience: profile.years_experience,
         monthly_income: profile.monthly_income,
       };
 
@@ -155,13 +189,25 @@ export default function ClientProfile() {
         throw new Error(data.error || 'Impossible de sauvegarder le profil.');
       }
 
-      const data = (await res.json()) as ProfileData;
-      setProfile({ ...EMPTY_PROFILE, ...data });
+      const raw = (await res.json()) as Record<string, unknown>;
+      setProfile(normalizeProfileFromApi(raw));
       setSuccess('Profil mis à jour avec succès.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Impossible de sauvegarder le profil.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const formatMetaDate = (iso: string | null | undefined) => {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('fr-FR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+    } catch {
+      return iso;
     }
   };
 
@@ -188,6 +234,34 @@ export default function ClientProfile() {
             </div>
           </div>
         </div>
+
+        {(profile.id || profile.role || profile.created_at || profile.updated_at) && (
+          <div className="p-6 border-b border-gray-200 bg-gray-50/80">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Compte</h3>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              {profile.id && (
+                <div>
+                  <p className="text-gray-500 mb-0.5">Identifiant</p>
+                  <p className="font-mono text-gray-800 text-xs break-all">{profile.id}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-gray-500 mb-0.5">Rôle</p>
+                <p className="font-medium text-gray-900">
+                  {ROLE_LABELS[profile.role ?? ''] ?? profile.role ?? '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-0.5">Inscription</p>
+                <p className="font-medium text-gray-900">{formatMetaDate(profile.created_at)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-0.5">Dernière mise à jour (profil)</p>
+                <p className="font-medium text-gray-900">{formatMetaDate(profile.updated_at)}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations personnelles</h3>
@@ -229,6 +303,17 @@ export default function ClientProfile() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
               <input type="text" value={profile.employer ?? ''} onChange={updateField('employer')} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
+              <input
+                type="number"
+                min={0}
+                max={60}
+                value={profile.years_experience ?? ''}
+                onChange={updateField('years_experience')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Revenu mensuel (TND)</label>

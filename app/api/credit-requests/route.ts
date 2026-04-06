@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getSessionProfileId } from '@/lib/session';
 import { logActivity } from '@/lib/activityLog';
 import { dbRowToCreditRequest } from '@/lib/db';
+import { scoreAndCategoryForDb } from '@/lib/creditScoring';
 
 export async function GET() {
   const profileId = await getSessionProfileId();
@@ -36,8 +37,19 @@ export async function POST(request: Request) {
   const monthlyIncome = body.monthlyIncome ? Number(body.monthlyIncome) : null;
   const amount = Number(body.creditAmount) || 0;
   const duration = Number(body.duration) || 0;
-  const score = Math.min(100, Math.max(0, 50 + Math.floor(Math.random() * 40)));
-  const scoreCategory = score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low';
+  const additionalIncome = body.additionalIncome ? Number(body.additionalIncome) : 0;
+  const rentMortgage = body.rentMortgage ? Number(body.rentMortgage) : 0;
+  const otherCharges = body.otherCharges ? Number(body.otherCharges) : 0;
+  const loanPayment = body.loanPayment ? Number(body.loanPayment) : 0;
+  const { score, score_category: scoreCategory } = scoreAndCategoryForDb({
+    monthly_income: monthlyIncome,
+    additional_income: additionalIncome,
+    rent_mortgage: rentMortgage,
+    other_charges: otherCharges,
+    loan_payment: loanPayment,
+    amount,
+    duration,
+  });
   const trackingCode = randomBytes(4).toString('hex');
 
   const { data, error } = await supabase
@@ -58,11 +70,11 @@ export async function POST(request: Request) {
       employer: body.employer || null,
       years_experience: body.yearsExperience ? Number(body.yearsExperience) : null,
       work_address: body.workAddress || null,
-      additional_income: body.additionalIncome ? Number(body.additionalIncome) : 0,
-      rent_mortgage: body.rentMortgage ? Number(body.rentMortgage) : 0,
-      other_charges: body.otherCharges ? Number(body.otherCharges) : 0,
+      additional_income: additionalIncome,
+      rent_mortgage: rentMortgage,
+      other_charges: otherCharges,
       existing_loans: body.existingLoans || null,
-      loan_payment: body.loanPayment ? Number(body.loanPayment) : 0,
+      loan_payment: loanPayment,
       credit_purpose: body.creditPurpose || null,
       guarantee_type: body.guaranteeType || null,
       notes: body.notes || null,
