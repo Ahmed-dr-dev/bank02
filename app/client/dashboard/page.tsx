@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { CreditRequest } from '@/lib/mockData';
+import { formatIbanForDisplay, formatRibForDisplay } from '@/lib/bankIdentifiers';
 
 type ClientStats = {
   totalRequests: number;
@@ -10,17 +11,25 @@ type ClientStats = {
   activeRequests: number;
 };
 
+type ProfileHeader = {
+  full_name: string | null;
+  rib: string | null;
+  iban: string | null;
+};
+
 export default function ClientDashboard() {
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [stats, setStats] = useState<ClientStats | null>(null);
+  const [profile, setProfile] = useState<ProfileHeader | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [reqRes, statsRes] = await Promise.all([
+        const [reqRes, statsRes, profRes] = await Promise.all([
           fetch('/api/credit-requests'),
           fetch('/api/dashboard/stats'),
+          fetch('/api/profile', { credentials: 'include' }),
         ]);
         if (reqRes.ok) {
           const data = await reqRes.json();
@@ -30,8 +39,19 @@ export default function ClientDashboard() {
           const data = await statsRes.json();
           setStats(data);
         }
+        if (profRes.ok) {
+          const p = await profRes.json();
+          setProfile({
+            full_name: typeof p.full_name === 'string' ? p.full_name : null,
+            rib: typeof p.rib === 'string' ? p.rib : null,
+            iban: typeof p.iban === 'string' ? p.iban : null,
+          });
+        } else {
+          setProfile(null);
+        }
       } catch {
         setRequests([]);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -41,10 +61,35 @@ export default function ClientDashboard() {
 
   const recent = requests.slice(0, 4);
 
+  const displayName = (profile?.full_name ?? '').trim() || 'Client';
+
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Accueil</h1>
+        <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-slate-50 to-blue-50/80 px-6 py-5 mb-6 shadow-sm">
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Espace client</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{displayName}</h1>
+          <dl className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-gray-500">RIB</dt>
+              <dd className="font-mono font-medium text-gray-900 tracking-wide">{formatRibForDisplay(profile?.rib ?? '')}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">IBAN</dt>
+              <dd className="font-mono font-medium text-gray-900 tracking-wide break-all">{formatIbanForDisplay(profile?.iban ?? '')}</dd>
+            </div>
+          </dl>
+          {!loading && profile && !profile.rib && !profile.iban && (
+            <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Complétez votre RIB et IBAN dans{' '}
+              <Link href="/client/profile" className="underline font-medium">
+                Mon profil
+              </Link>
+              .
+            </p>
+          )}
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900">Accueil</h2>
         <p className="text-gray-600 mt-1">Demande de crédit, simulation et suivi de vos dossiers</p>
         {stats != null && (
           <p className="text-sm text-gray-500 mt-2">

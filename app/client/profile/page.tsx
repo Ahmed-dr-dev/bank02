@@ -18,6 +18,8 @@ type ProfileData = {
   employer: string | null;
   years_experience: number | null;
   monthly_income: number | null;
+  rib: string | null;
+  iban: string | null;
   role?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -37,6 +39,8 @@ const EMPTY_PROFILE: ProfileData = {
   employer: '',
   years_experience: null,
   monthly_income: null,
+  rib: '',
+  iban: '',
 };
 
 function toDateInputValue(v: unknown): string {
@@ -71,6 +75,8 @@ function normalizeProfileFromApi(raw: Record<string, unknown>): ProfileData {
     employer: raw.employer != null ? String(raw.employer) : '',
     years_experience: toNumberOrNull(raw.years_experience),
     monthly_income: toNumberOrNull(raw.monthly_income),
+    rib: raw.rib != null ? String(raw.rib) : '',
+    iban: raw.iban != null ? String(raw.iban) : '',
     role: raw.role != null ? String(raw.role) : null,
     created_at: raw.created_at != null ? String(raw.created_at) : null,
     updated_at: raw.updated_at != null ? String(raw.updated_at) : null,
@@ -161,7 +167,7 @@ export default function ClientProfile() {
       setSaving(true);
       setError('');
       setSuccess('');
-      const payload = {
+      const payload: Record<string, unknown> = {
         full_name: profile.full_name?.trim() || null,
         email: profile.email?.trim() || null,
         phone: profile.phone?.trim() || null,
@@ -176,6 +182,10 @@ export default function ClientProfile() {
         years_experience: profile.years_experience,
         monthly_income: profile.monthly_income,
       };
+      const ribT = profile.rib?.trim();
+      const ibanT = profile.iban?.trim();
+      if (ribT) payload.rib = ribT;
+      if (ibanT) payload.iban = ibanT;
 
       const res = await fetch('/api/profile', {
         method: 'PATCH',
@@ -262,6 +272,37 @@ export default function ClientProfile() {
             </div>
           </div>
         )}
+
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Coordonnées bancaires</h3>
+          <p className="text-sm text-gray-600 mb-4">RIB (20 chiffres) et IBAN tunisien (24 caractères, ex. TN59…).</p>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">RIB</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={profile.rib ?? ''}
+                onChange={updateField('rib')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                placeholder="20 chiffres"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">IBAN</label>
+              <input
+                type="text"
+                value={profile.iban ?? ''}
+                onChange={(e) => {
+                  setProfile((prev) => ({ ...prev, iban: e.target.value.toUpperCase() }));
+                  if (success) setSuccess('');
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                placeholder="TN…"
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations personnelles</h3>

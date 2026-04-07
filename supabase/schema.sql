@@ -20,6 +20,8 @@ create table public.profiles (
   employer text,
   years_experience int,
   monthly_income numeric(12,2),
+  rib text,
+  iban text,
   role text not null default 'client' check (role in ('client','admin')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

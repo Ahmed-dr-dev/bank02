@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidTunisianIban, isValidTunisianRib, normalizeIban, normalizeRib } from '@/lib/bankIdentifiers';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function RegisterPage() {
     lastName: '',
     email: '',
     phone: '',
+    rib: '',
+    iban: '',
     password: '',
     confirmPassword: '',
   });
@@ -25,6 +28,12 @@ export default function RegisterPage() {
     const phoneDigits = form.phone.replace(/\D/g, '');
     if (!form.phone.trim()) e.phone = 'Téléphone requis';
     else if (!/^(216[0-9]{8}|[0-9]{8})$/.test(phoneDigits)) e.phone = 'Numéro tunisien invalide (8 chiffres ou +216 XX XXX XXX)';
+    const ribNorm = normalizeRib(form.rib);
+    if (!ribNorm) e.rib = 'RIB requis (20 chiffres)';
+    else if (!isValidTunisianRib(ribNorm)) e.rib = 'RIB invalide : exactement 20 chiffres';
+    const ibanNorm = normalizeIban(form.iban);
+    if (!ibanNorm) e.iban = 'IBAN requis';
+    else if (!isValidTunisianIban(ibanNorm)) e.iban = 'IBAN invalide (Tunisie : TN + 22 caractères, 24 au total)';
     if (!form.password) e.password = 'Mot de passe requis';
     else if (form.password.length < 6) e.password = 'Minimum 6 caractères';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Les mots de passe ne correspondent pas';
@@ -49,6 +58,8 @@ export default function RegisterPage() {
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
+          rib: normalizeRib(form.rib),
+          iban: normalizeIban(form.iban),
           password: form.password,
         }),
         credentials: 'include',
@@ -132,6 +143,37 @@ export default function RegisterPage() {
                 placeholder="+216 XX XXX XXX"
               />
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">RIB (20 chiffres)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={form.rib}
+                  onChange={update('rib')}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${errors.rib ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Ex. 07 12345 012345678901 12"
+                />
+                {errors.rib && <p className="text-red-500 text-sm mt-1">{errors.rib}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">IBAN</label>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  value={form.iban}
+                  onChange={(ev) => {
+                    setForm((f) => ({ ...f, iban: ev.target.value.toUpperCase() }));
+                    if (errors.iban) setErrors((er) => ({ ...er, iban: '' }));
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${errors.iban ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="TN59 … (24 caractères)"
+                />
+                {errors.iban && <p className="text-red-500 text-sm mt-1">{errors.iban}</p>}
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
