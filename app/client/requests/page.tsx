@@ -7,7 +7,11 @@ import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import type { CreditRequest } from '@/lib/mockData';
 import { validateStep, validateEditCreditRequestSubmit, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
-import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
+import {
+  GUARANTEE_TYPE_OPTIONS,
+  defaultGuaranteeEstimatedValueString,
+  guaranteeSelectOptionShortLabel,
+} from '@/lib/guaranteeTypes';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
   const parts = (r.clientName || '').trim().split(/\s+/);
@@ -35,6 +39,12 @@ function requestToFormData(r: CreditRequest): RequestFormData {
     duration: r.duration != null ? String(r.duration) : '',
     creditPurpose: r.creditPurpose ?? '',
     guaranteeType: r.guaranteeType ?? '',
+    guaranteeEstimatedValue: (() => {
+      if (r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))) {
+        return String(Math.round(Number(r.guaranteeEstimatedValue)));
+      }
+      return defaultGuaranteeEstimatedValueString(r.guaranteeType ?? '');
+    })(),
     notes: r.notes ?? '',
   };
 }
@@ -205,6 +215,25 @@ function ClientRequests() {
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
   };
 
+  const onGuaranteeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    setFormData((f) =>
+      f
+        ? {
+            ...f,
+            guaranteeType: v,
+            guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+          }
+        : f
+    );
+    setErrors((er) => {
+      const next = { ...er };
+      delete next.guaranteeType;
+      delete next.guaranteeEstimatedValue;
+      return next;
+    });
+  };
+
   const validateCurrentStep = (stepIndex: number): boolean => {
     if (!formData) return false;
     const stepErrors = validateStep(formData, stepIndex);
@@ -247,6 +276,7 @@ function ClientRequests() {
         duration: formData.duration,
         creditPurpose: formData.creditPurpose,
         guaranteeType: formData.guaranteeType,
+        guaranteeEstimatedValue: formData.guaranteeEstimatedValue,
         notes: formData.notes,
       };
 
@@ -565,15 +595,28 @@ function ClientRequests() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
-                    <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
+                    <select value={formData.guaranteeType ?? ''} onChange={onGuaranteeTypeChange} className={inputClass('guaranteeType')}>
                       <option value="">Choisir</option>
                       {GUARANTEE_TYPE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
-                          {guaranteeSelectOptionLabel(opt)}
+                          {guaranteeSelectOptionShortLabel(opt)}
                         </option>
                       ))}
                     </select>
                     {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
+                    <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">Valeur estimative de la garantie (TND)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={100}
+                      value={formData.guaranteeEstimatedValue ?? ''}
+                      onChange={update('guaranteeEstimatedValue')}
+                      className={inputClass('guaranteeEstimatedValue')}
+                      placeholder="Prérempli selon le type"
+                    />
+                    {err('guaranteeEstimatedValue') && (
+                      <p className="text-red-500 text-sm mt-1">{err('guaranteeEstimatedValue')}</p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>

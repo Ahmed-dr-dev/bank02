@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { CreditRequest } from '@/lib/mockData';
-import { describeGuaranteeForDisplay } from '@/lib/guaranteeTypes';
+import { describeGuaranteeForDisplay, formatGuaranteeEstimatedTnd } from '@/lib/guaranteeTypes';
 
 function formatTND(n: number): string {
   return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' TND';
@@ -90,7 +90,8 @@ export default function RequestPrintPage() {
             <div><span className="text-gray-500">Montant :</span> <span className="font-medium">{formatTND(request.amount)}</span></div>
             <div><span className="text-gray-500">Durée :</span> <span className="font-medium">{request.duration} mois</span></div>
             <div><span className="text-gray-500">Objet :</span> <span className="font-medium">{request.creditPurpose || '—'}</span></div>
-            <div className="col-span-2"><span className="text-gray-500">Garantie :</span> <span className="font-medium">{describeGuaranteeForDisplay(request.guaranteeType) || '—'}</span></div>
+            <div className="col-span-2"><span className="text-gray-500">Type de garantie :</span> <span className="font-medium">{describeGuaranteeForDisplay(request.guaranteeType) || '—'}</span></div>
+            <div className="col-span-2"><span className="text-gray-500">Valeur estimative (garantie) :</span> <span className="font-medium">{formatGuaranteeEstimatedTnd(request.guaranteeEstimatedValue ?? null)}</span></div>
           </div>
         </section>
 

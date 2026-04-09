@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionProfileId } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
 import { jsPDF } from 'jspdf';
-import { describeGuaranteeForDisplay } from '@/lib/guaranteeTypes';
+import { describeGuaranteeForDisplay, formatGuaranteeEstimatedTnd } from '@/lib/guaranteeTypes';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const profileId = await getSessionProfileId();
@@ -66,10 +66,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   addLeft(`Montant : ${amount} TND`);
   addLeft(`Durée : ${data.duration} mois`);
   addLeft(`Objet : ${data.credit_purpose || '—'}`);
-  const guaranteeText = `Garantie : ${describeGuaranteeForDisplay(data.guarantee_type) || '—'}`;
-  doc.splitTextToSize(guaranteeText, pageW - 2 * margin).forEach((line: string) => {
+  const guaranteeTypeLine = `Type de garantie : ${describeGuaranteeForDisplay(data.guarantee_type) || '—'}`;
+  doc.splitTextToSize(guaranteeTypeLine, pageW - 2 * margin).forEach((line: string) => {
     addLeft(line);
   });
+  const estVal =
+    data.guarantee_estimated_value != null && Number.isFinite(Number(data.guarantee_estimated_value))
+      ? Number(data.guarantee_estimated_value)
+      : null;
+  addLeft(`Valeur estimative (garantie) : ${formatGuaranteeEstimatedTnd(estVal)}`);
   y += 5;
 
   doc.setFontSize(12);

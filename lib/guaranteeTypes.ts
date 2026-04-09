@@ -35,13 +35,21 @@ export function guaranteeSelectOptionLabel(opt: GuaranteeTypeOption): string {
   return `${opt.value} (estimation indicative : ${formatGuaranteeEstimatedTnd(opt.estimatedAmountTnd)})`;
 }
 
-/** Texte pour fiche dossier / PDF (types connus ou libellé brut si ancien enregistrement). */
+/** Libellé court : uniquement le type (la valeur estimative est dans un champ à part). */
+export function guaranteeSelectOptionShortLabel(opt: GuaranteeTypeOption): string {
+  return opt.value;
+}
+
+/** Valeur par défaut pour le champ « valeur estimative » (TND) selon le type choisi. */
+export function defaultGuaranteeEstimatedValueString(typeValue: string): string {
+  const opt = getGuaranteeTypeOption(typeValue);
+  if (opt?.estimatedAmountTnd == null) return '';
+  return String(Math.round(opt.estimatedAmountTnd));
+}
+
+/** Texte pour fiche dossier / PDF : libellé du type uniquement (montant affiché à part si besoin). */
 export function describeGuaranteeForDisplay(storedType: string | undefined | null): string {
   if (!storedType?.trim()) return '';
   const opt = getGuaranteeTypeOption(storedType);
-  if (!opt) return storedType.trim();
-  if (opt.estimatedAmountTnd == null) {
-    return `${opt.value} — sans montant de garantie mobilisable (0 TND)`;
-  }
-  return `${opt.value} — estimation indicative : ${formatGuaranteeEstimatedTnd(opt.estimatedAmountTnd)}`;
+  return opt ? opt.value : storedType.trim();
 }

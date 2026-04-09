@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import { validateStep, type RequestFormData } from '@/lib/creditRequestValidation';
-import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
+import {
+  GUARANTEE_TYPE_OPTIONS,
+  defaultGuaranteeEstimatedValueString,
+  guaranteeSelectOptionShortLabel,
+} from '@/lib/guaranteeTypes';
 import type { CreditRequest } from '@/lib/mockData';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
@@ -33,6 +37,12 @@ function requestToFormData(r: CreditRequest): RequestFormData {
     duration: r.duration != null ? String(r.duration) : '',
     creditPurpose: r.creditPurpose ?? '',
     guaranteeType: r.guaranteeType ?? '',
+    guaranteeEstimatedValue: (() => {
+      if (r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))) {
+        return String(Math.round(Number(r.guaranteeEstimatedValue)));
+      }
+      return defaultGuaranteeEstimatedValueString(r.guaranteeType ?? '');
+    })(),
     notes: r.notes ?? '',
   };
 }
@@ -67,6 +77,25 @@ export default function EditRequestPage() {
   const update = (key: keyof RequestFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData((f) => (f ? { ...f, [key]: e.target.value } : f));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: '' }));
+  };
+
+  const onGuaranteeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    setFormData((f) =>
+      f
+        ? {
+            ...f,
+            guaranteeType: v,
+            guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+          }
+        : f
+    );
+    setErrors((er) => {
+      const next = { ...er };
+      delete next.guaranteeType;
+      delete next.guaranteeEstimatedValue;
+      return next;
+    });
   };
 
   const validateCurrentStep = (stepIndex: number): boolean => {
@@ -110,6 +139,7 @@ export default function EditRequestPage() {
         duration: formData.duration,
         creditPurpose: formData.creditPurpose,
         guaranteeType: formData.guaranteeType,
+        guaranteeEstimatedValue: formData.guaranteeEstimatedValue,
         notes: formData.notes,
       };
       const res = await fetch(`/api/credit-requests/${id}`, {
@@ -272,14 +302,30 @@ export default function EditRequestPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
-              <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
+              <select value={formData.guaranteeType ?? ''} onChange={onGuaranteeTypeChange} className={inputClass('guaranteeType')}>
                 <option value="">Choisir</option>
                 {GUARANTEE_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {guaranteeSelectOptionLabel(opt)}
+                    {guaranteeSelectOptionShortLabel(opt)}
                   </option>
                 ))}
               </select>
+              {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Valeur estimative de la garantie (TND)</label>
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={formData.guaranteeEstimatedValue ?? ''}
+                onChange={update('guaranteeEstimatedValue')}
+                className={inputClass('guaranteeEstimatedValue')}
+                placeholder="Prérempli selon le type"
+              />
+              {err('guaranteeEstimatedValue') && (
+                <p className="text-red-500 text-sm mt-1">{err('guaranteeEstimatedValue')}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>

@@ -51,6 +51,12 @@ export async function POST(request: Request) {
     duration,
   });
   const trackingCode = randomBytes(4).toString('hex');
+  const gEstRaw = body.guaranteeEstimatedValue;
+  const guaranteeEstimatedValue =
+    gEstRaw !== undefined && gEstRaw !== null && String(gEstRaw).trim() !== ''
+      ? Number(gEstRaw)
+      : null;
+  const guaranteeEstimatedDb = Number.isFinite(guaranteeEstimatedValue as number) ? guaranteeEstimatedValue : null;
 
   const { data, error } = await supabase
     .from('credit_requests')
@@ -77,6 +83,7 @@ export async function POST(request: Request) {
       loan_payment: loanPayment,
       credit_purpose: body.creditPurpose || null,
       guarantee_type: body.guaranteeType || null,
+      guarantee_estimated_value: guaranteeEstimatedDb,
       notes: body.notes || null,
       documents: Array.isArray(body.documents) ? body.documents : ['CIN', 'Bulletins de salaire', 'Relevés bancaires'],
     })

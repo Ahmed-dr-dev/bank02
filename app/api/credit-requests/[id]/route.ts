@@ -79,6 +79,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const otherCharges = body.otherCharges != null ? Number(body.otherCharges) : existing.other_charges;
     const loanPayment = body.loanPayment != null ? Number(body.loanPayment) : existing.loan_payment;
 
+    let guarantee_estimated_value: number | null = existing.guarantee_estimated_value;
+    if (body.guaranteeEstimatedValue !== undefined) {
+      const raw = String(body.guaranteeEstimatedValue).trim();
+      if (raw === '') guarantee_estimated_value = null;
+      else {
+        const n = Number(raw);
+        guarantee_estimated_value = Number.isFinite(n) ? n : existing.guarantee_estimated_value;
+      }
+    }
+
     const { score, score_category } = scoreAndCategoryForDb({
       monthly_income: monthlyIncome,
       additional_income: additionalIncome,
@@ -108,6 +118,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       loan_payment: loanPayment,
       credit_purpose: body.creditPurpose ?? existing.credit_purpose,
       guarantee_type: body.guaranteeType ?? existing.guarantee_type,
+      guarantee_estimated_value,
       notes: body.notes ?? existing.notes,
       score,
       score_category,

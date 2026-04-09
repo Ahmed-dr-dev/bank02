@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ScoreBadge from '@/components/ScoreBadge';
 import RequestChat from '@/components/RequestChat';
 import type { CreditRequest } from '@/lib/mockData';
-import { describeGuaranteeForDisplay } from '@/lib/guaranteeTypes';
+import { describeGuaranteeForDisplay, formatGuaranteeEstimatedTnd } from '@/lib/guaranteeTypes';
 
 const statusLabel: Record<string, string> = {
   approved: 'Approuvé',
@@ -216,6 +216,7 @@ export default function AgentRequestDetail() {
                     <LabelVal label="Mensualité prêt existant" value={request.loanPayment ? formatTND(request.loanPayment) : null} />
                     <LabelVal label="Objet du crédit" value={request.creditPurpose} />
                     <LabelVal label="Type de garantie" value={describeGuaranteeForDisplay(request.guaranteeType)} />
+                    <LabelVal label="Valeur estimative (garantie)" value={formatGuaranteeEstimatedTnd(request.guaranteeEstimatedValue ?? null)} />
                   </div>
                 </div>
               )}

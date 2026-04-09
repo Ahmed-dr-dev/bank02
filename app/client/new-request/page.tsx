@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import { validateStep, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
-import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionLabel } from '@/lib/guaranteeTypes';
+import {
+  GUARANTEE_TYPE_OPTIONS,
+  defaultGuaranteeEstimatedValueString,
+  guaranteeSelectOptionShortLabel,
+} from '@/lib/guaranteeTypes';
 
 const emptyForm: RequestFormData = {
   firstName: '',
@@ -28,6 +32,7 @@ const emptyForm: RequestFormData = {
   duration: '',
   creditPurpose: '',
   guaranteeType: '',
+  guaranteeEstimatedValue: '',
   notes: '',
 };
 
@@ -41,6 +46,21 @@ export default function NewRequest() {
   const update = (key: keyof RequestFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData((f) => ({ ...f, [key]: e.target.value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: '' }));
+  };
+
+  const onGuaranteeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    setFormData((f) => ({
+      ...f,
+      guaranteeType: v,
+      guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+    }));
+    setErrors((er) => {
+      const next = { ...er };
+      if (next.guaranteeType) delete next.guaranteeType;
+      if (next.guaranteeEstimatedValue) delete next.guaranteeEstimatedValue;
+      return next;
+    });
   };
 
   const validateCurrentStep = (stepIndex: number): boolean => {
@@ -79,6 +99,7 @@ export default function NewRequest() {
         duration: formData.duration,
         creditPurpose: formData.creditPurpose,
         guaranteeType: formData.guaranteeType,
+        guaranteeEstimatedValue: formData.guaranteeEstimatedValue,
         notes: formData.notes,
       };
       const res = await fetch('/api/credit-requests', {
@@ -264,15 +285,31 @@ export default function NewRequest() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Type de garantie</label>
-              <select value={formData.guaranteeType ?? ''} onChange={update('guaranteeType')} className={inputClass('guaranteeType')}>
+              <select value={formData.guaranteeType ?? ''} onChange={onGuaranteeTypeChange} className={inputClass('guaranteeType')}>
                 <option value="">Choisir</option>
                 {GUARANTEE_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {guaranteeSelectOptionLabel(opt)}
+                    {guaranteeSelectOptionShortLabel(opt)}
                   </option>
                 ))}
               </select>
               {err('guaranteeType') && <p className="text-red-500 text-sm mt-1">{err('guaranteeType')}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Valeur estimative de la garantie (TND)</label>
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={formData.guaranteeEstimatedValue ?? ''}
+                onChange={update('guaranteeEstimatedValue')}
+                className={inputClass('guaranteeEstimatedValue')}
+                placeholder="Prérempli selon le type — modifiable"
+              />
+              <p className="text-xs text-gray-500 mt-1">Indicatif, non contractuel. Laisser vide si « Aucune ».</p>
+              {err('guaranteeEstimatedValue') && (
+                <p className="text-red-500 text-sm mt-1">{err('guaranteeEstimatedValue')}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>

@@ -7,7 +7,7 @@ import ScoreBadge from '@/components/ScoreBadge';
 import StatusTimeline from '@/components/StatusTimeline';
 import RequestChat from '@/components/RequestChat';
 import type { CreditRequest } from '@/lib/mockData';
-import { describeGuaranteeForDisplay } from '@/lib/guaranteeTypes';
+import { describeGuaranteeForDisplay, formatGuaranteeEstimatedTnd, getGuaranteeTypeOption } from '@/lib/guaranteeTypes';
 import {
   computeCreditScoring,
   type CreditScoringResult,
@@ -26,6 +26,41 @@ function formatDate(s: string): string {
 function formatDateTime(s: string): string {
   const d = new Date(s);
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function GuaranteeEstimatedSummary({
+  guaranteeType,
+  guaranteeEstimatedValue,
+}: {
+  guaranteeType?: string;
+  guaranteeEstimatedValue?: number;
+}) {
+  const opt = getGuaranteeTypeOption(guaranteeType);
+  const refAmt = opt?.estimatedAmountTnd ?? null;
+  const declared =
+    guaranteeEstimatedValue != null &&
+    Number.isFinite(Number(guaranteeEstimatedValue)) &&
+    Number(guaranteeEstimatedValue) > 0
+      ? Number(guaranteeEstimatedValue)
+      : null;
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <p className="text-xs text-gray-500 uppercase tracking-wide">Valeur déclarée</p>
+        <p className="font-medium text-gray-900">{formatGuaranteeEstimatedTnd(declared)}</p>
+      </div>
+      {opt ? (
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Estimation pour le type « {opt.value} »</p>
+          <p className="font-medium text-gray-900">{formatGuaranteeEstimatedTnd(refAmt)}</p>
+          <p className="text-xs text-gray-500 mt-1">Indicatif, non contractuel</p>
+        </div>
+      ) : guaranteeType?.trim() ? (
+        <p className="text-sm text-gray-600">Type enregistré : {guaranteeType.trim()}</p>
+      ) : null}
+    </div>
+  );
 }
 
 function LabelValue({ label, value, hideIfEmpty, className = '' }: { label: string; value: React.ReactNode; hideIfEmpty?: boolean; className?: string }) {
@@ -177,6 +212,15 @@ export default function ClientRequestDetail() {
                 <LabelValue label="Durée" value={`${request.duration} mois (${Math.round(request.duration / 12)} an(s))`} />
                 <LabelValue label="Objet du crédit" value={request.creditPurpose} hideIfEmpty />
                 <LabelValue label="Type de garantie" value={describeGuaranteeForDisplay(request.guaranteeType)} hideIfEmpty />
+                <LabelValue
+                  label="Valeur estimative (garantie)"
+                  value={
+                    <GuaranteeEstimatedSummary
+                      guaranteeType={request.guaranteeType}
+                      guaranteeEstimatedValue={request.guaranteeEstimatedValue}
+                    />
+                  }
+                />
                 <LabelValue
                   label="Score"
                   value={<ScoreBadge score={sc.totalScore} category={sc.category} size="md" />}

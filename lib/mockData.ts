@@ -26,6 +26,8 @@ export interface CreditRequest {
   loanPayment?: number;
   creditPurpose?: string;
   guaranteeType?: string;
+  /** Valeur estimative de la garantie (TND) */
+  guaranteeEstimatedValue?: number;
   notes?: string;
   /** Code for "Suivi de mon crédit" on home (no login) */
   trackingCode?: string;

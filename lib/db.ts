@@ -23,6 +23,7 @@ export type DbCreditRequest = {
   loan_payment: number | null;
   credit_purpose: string | null;
   guarantee_type: string | null;
+  guarantee_estimated_value: number | null;
   notes: string | null;
   documents: string[];
   submitted_at: string;
@@ -56,6 +57,8 @@ export function dbRowToCreditRequest(row: DbCreditRequest): CreditRequest {
     loanPayment: Number(row.loan_payment) ?? 0,
     creditPurpose: row.credit_purpose ?? undefined,
     guaranteeType: row.guarantee_type ?? undefined,
+    guaranteeEstimatedValue:
+      row.guarantee_estimated_value != null ? Number(row.guarantee_estimated_value) : undefined,
     notes: row.notes ?? undefined,
     trackingCode: row.tracking_code ?? undefined,
   };

@@ -2,6 +2,8 @@
  * Validation règles adaptées au marché tunisien (TND, CIN, téléphone +216, BCT)
  */
 
+import { getGuaranteeTypeOption } from '@/lib/guaranteeTypes';
+
 export const CIN_MAX_LENGTH = 12;
 const MIN_AGE = 21; // âge minimum pour un crédit (pratique courante en Tunisie)
 const MIN_CREDIT_AMOUNT_TND = 1_000;
@@ -36,6 +38,8 @@ export interface RequestFormData {
   duration?: string;
   creditPurpose?: string;
   guaranteeType?: string;
+  /** Valeur estimative de la garantie (TND), préremplie selon le type */
+  guaranteeEstimatedValue?: string;
   notes?: string;
 }
 
@@ -109,6 +113,20 @@ export function validateStep4Credit(data: RequestFormData): Record<string, strin
     err.duration = `Durée maximum : ${MAX_DURATION_MONTHS} mois (25 ans)`;
   if (!data.creditPurpose?.trim()) err.creditPurpose = 'Objet du crédit requis';
   if (!data.guaranteeType?.trim()) err.guaranteeType = 'Type de garantie requis';
+  else {
+    const gOpt = getGuaranteeTypeOption(data.guaranteeType);
+    if (gOpt && gOpt.estimatedAmountTnd != null) {
+      const ev = parseFloat(String(data.guaranteeEstimatedValue ?? '').replace(/\s/g, ''));
+      if (
+        data.guaranteeEstimatedValue === undefined ||
+        String(data.guaranteeEstimatedValue).trim() === '' ||
+        Number.isNaN(ev) ||
+        ev <= 0
+      ) {
+        err.guaranteeEstimatedValue = 'Valeur estimative de la garantie requise (TND, supérieure à 0)';
+      }
+    }
+  }
   return err;
 }
 

@@ -53,6 +53,7 @@ create table public.credit_requests (
   loan_payment numeric(12,2) default 0,
   credit_purpose text,
   guarantee_type text,
+  guarantee_estimated_value numeric(12,2),
   notes text,
   documents text[] default '{}',
   submitted_at timestamptz not null default now(),
