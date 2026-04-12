@@ -63,3 +63,15 @@ create table public.credit_requests (
 create index credit_requests_user_id on public.credit_requests(user_id);
 create index credit_requests_status on public.credit_requests(status);
 create index credit_requests_submitted_at on public.credit_requests(submitted_at desc);
+
+-- Assistant (chat widget): admin-managed keyword → reply rows; checked before built-in static replies
+create table if not exists public.assistant_replies (
+  id uuid primary key default uuid_generate_v4(),
+  keywords text[] not null,
+  reply text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists assistant_replies_sort on public.assistant_replies (sort_order asc, id asc);

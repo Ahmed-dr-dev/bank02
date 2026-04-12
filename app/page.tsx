@@ -74,7 +74,7 @@ export default function HomePage() {
                   </svg>
                 </Link>
                 <Link
-                  href="/client/simulator"
+                  href="/simulateur"
                   className="bg-white text-gray-900 border-2 border-gray-300 px-8 py-4 rounded-lg text-lg font-semibold hover:border-gray-400 hover:shadow-md transition-all flex items-center justify-center"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

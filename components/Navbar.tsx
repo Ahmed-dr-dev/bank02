@@ -51,16 +51,6 @@ export default function Navbar() {
                 My Requests
               </Link>
               <Link
-                href="/client/simulator"
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  pathname === '/client/simulator' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                Simulator
-              </Link>
-              <Link
                 href="/client/profile"
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
                   pathname === '/client/profile' 

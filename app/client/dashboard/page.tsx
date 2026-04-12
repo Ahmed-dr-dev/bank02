@@ -90,7 +90,7 @@ export default function ClientDashboard() {
           )}
         </div>
         <h2 className="text-xl font-semibold text-gray-900">Accueil</h2>
-        <p className="text-gray-600 mt-1">Demande de crédit, simulation et suivi de vos dossiers</p>
+        <p className="text-gray-600 mt-1">Demande de crédit et suivi de vos dossiers</p>
         {stats != null && (
           <p className="text-sm text-gray-500 mt-2">
             {stats.totalRequests} demande{stats.totalRequests !== 1 ? 's' : ''} · {stats.approvedRequests} approuvée{stats.approvedRequests !== 1 ? 's' : ''} · {stats.activeRequests} en cours
@@ -98,7 +98,7 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
         <Link
           href="/client/new-request"
           className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all group"
@@ -107,16 +107,6 @@ export default function ClientDashboard() {
           <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600">Demande de crédit</h2>
           <p className="text-gray-600 text-sm">Déposer une nouvelle demande de crédit en TND</p>
           <span className="inline-block mt-4 text-blue-600 font-medium text-sm">Créer une demande →</span>
-        </Link>
-
-        <Link
-          href="/client/simulator"
-          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:border-green-300 hover:shadow-xl transition-all group"
-        >
-          <span className="text-4xl block mb-4">💰</span>
-          <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-600">Simulateur</h2>
-          <p className="text-gray-600 text-sm">Estimer vos mensualités et montant possible en TND</p>
-          <span className="inline-block mt-4 text-green-600 font-medium text-sm">Ouvrir le simulateur →</span>
         </Link>
 
         <Link

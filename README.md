@@ -96,16 +96,20 @@ Open [http://localhost:3000](http://localhost:3000)
 - `/login` - Login (click either button to access portals)
 - `/register` - Registration
 
+### Public
+- `/simulateur` - Credit simulator (no login; same tool as before, outside the client layout)
+
 ### Client
 - `/client/dashboard` - Client dashboard
 - `/client/new-request` - New credit request
 - `/client/requests` - View all requests
 - `/client/request/[id]` - Request details
-- `/client/simulator` - Credit simulator
+- `/client/simulator` - Redirects to `/simulateur`
 - `/client/profile` - User profile
 
 ### Admin
 - `/admin/dashboard` - Admin dashboard
+- `/admin/assistant` - Manage chat assistant keyword replies (Supabase table `assistant_replies`)
 - `/admin/requests` - All requests
 - `/admin/requests/[id]` - Request review
 - `/admin/analytics` - Analytics

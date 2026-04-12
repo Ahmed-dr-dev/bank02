@@ -4,11 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import { validateStep, type RequestFormData } from '@/lib/creditRequestValidation';
-import {
-  GUARANTEE_TYPE_OPTIONS,
-  defaultGuaranteeEstimatedValueString,
-  guaranteeSelectOptionShortLabel,
-} from '@/lib/guaranteeTypes';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionShortLabel } from '@/lib/guaranteeTypes';
 import type { CreditRequest } from '@/lib/mockData';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
@@ -37,12 +33,10 @@ function requestToFormData(r: CreditRequest): RequestFormData {
     duration: r.duration != null ? String(r.duration) : '',
     creditPurpose: r.creditPurpose ?? '',
     guaranteeType: r.guaranteeType ?? '',
-    guaranteeEstimatedValue: (() => {
-      if (r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))) {
-        return String(Math.round(Number(r.guaranteeEstimatedValue)));
-      }
-      return defaultGuaranteeEstimatedValueString(r.guaranteeType ?? '');
-    })(),
+    guaranteeEstimatedValue:
+      r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))
+        ? String(Math.round(Number(r.guaranteeEstimatedValue)))
+        : '',
     notes: r.notes ?? '',
   };
 }
@@ -86,7 +80,7 @@ export default function EditRequestPage() {
         ? {
             ...f,
             guaranteeType: v,
-            guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+            guaranteeEstimatedValue: '',
           }
         : f
     );
@@ -252,7 +246,7 @@ export default function EditRequestPage() {
               <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Loyer / Prêt (TND/mois)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loyer (TND/mois)</label>
               <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} />
             </div>
             <div>
@@ -321,7 +315,7 @@ export default function EditRequestPage() {
                 value={formData.guaranteeEstimatedValue ?? ''}
                 onChange={update('guaranteeEstimatedValue')}
                 className={inputClass('guaranteeEstimatedValue')}
-                placeholder="Prérempli selon le type"
+                placeholder="Saisir la valeur estimée en TND"
               />
               {err('guaranteeEstimatedValue') && (
                 <p className="text-red-500 text-sm mt-1">{err('guaranteeEstimatedValue')}</p>

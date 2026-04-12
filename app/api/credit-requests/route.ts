@@ -41,6 +41,12 @@ export async function POST(request: Request) {
   const rentMortgage = body.rentMortgage ? Number(body.rentMortgage) : 0;
   const otherCharges = body.otherCharges ? Number(body.otherCharges) : 0;
   const loanPayment = body.loanPayment ? Number(body.loanPayment) : 0;
+  const gEstRaw = body.guaranteeEstimatedValue;
+  const guaranteeEstimatedValueParsed =
+    gEstRaw !== undefined && gEstRaw !== null && String(gEstRaw).trim() !== '' ? Number(gEstRaw) : null;
+  const guaranteeEstimatedDb = Number.isFinite(guaranteeEstimatedValueParsed as number)
+    ? guaranteeEstimatedValueParsed
+    : null;
   const { score, score_category: scoreCategory } = scoreAndCategoryForDb({
     monthly_income: monthlyIncome,
     additional_income: additionalIncome,
@@ -49,14 +55,9 @@ export async function POST(request: Request) {
     loan_payment: loanPayment,
     amount,
     duration,
+    guarantee_estimated_value: guaranteeEstimatedDb,
   });
   const trackingCode = randomBytes(4).toString('hex');
-  const gEstRaw = body.guaranteeEstimatedValue;
-  const guaranteeEstimatedValue =
-    gEstRaw !== undefined && gEstRaw !== null && String(gEstRaw).trim() !== ''
-      ? Number(gEstRaw)
-      : null;
-  const guaranteeEstimatedDb = Number.isFinite(guaranteeEstimatedValue as number) ? guaranteeEstimatedValue : null;
 
   const { data, error } = await supabase
     .from('credit_requests')

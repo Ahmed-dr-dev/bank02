@@ -1,6 +1,8 @@
 /**
- * Scoring crédit — règles explicites, reproductibles.
- * Ne prend pas en compte la profession : uniquement revenus, charges, capacité d’endettement et charge du nouveau prêt.
+ * Scoring crédit — modèle simple sur 100 points :
+ * 1) Taux d’endettement (charges + mensualité estimée du nouveau crédit) ÷ revenus mensuels totaux → max 60 pts
+ * 2) Valeur estimative de la garantie ÷ montant demandé → max 40 pts
+ * La profession n’entre pas dans le calcul.
  */
 
 export type CreditScoringInput = {
@@ -11,6 +13,7 @@ export type CreditScoringInput = {
   loanPayment: number;
   creditAmount: number;
   durationMonths: number;
+  guaranteeEstimatedValue: number;
 };
 
 export type ScoreComponent = {
@@ -25,21 +28,18 @@ export type CreditScoringResult = {
   totalScore: number;
   category: 'low' | 'medium' | 'high';
   components: ScoreComponent[];
-  /** Mensualité théorique du nouveau crédit (hypothèse documentée) */
   estimatedNewMonthlyPayment: number;
-  /** Revenus mensuels totaux (net + autres) */
   totalMonthlyResources: number;
-  /** Charges fixes avant nouveau crédit */
   fixedMonthlyCharges: number;
-  /** Taux d’endettement après ajout de la mensualité estimée */
   debtRatioAfterNewLoanPercent: number | null;
+  guaranteeToLoanPercent: number | null;
 };
 
-/** Taux annuel nominal indicatif pour estimer une mensualité (à titre pédagogique, pas une offre). */
+/** Taux annuel nominal indicatif pour estimer la mensualité du nouveau crédit (non contractuel). */
 export const SCORING_ANNUAL_RATE_INDICATIVE = 0.08;
 
-const MIN_INCOME_FLOOR = 500;
-const MAX_INCOME_REF = 25_000;
+const MAX_DEBT_POINTS = 60;
+const MAX_GUARANTEE_POINTS = 40;
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
@@ -54,79 +54,24 @@ export function estimateMonthlyPayment(principal: number, durationMonths: number
   return (principal * r * pow) / (pow - 1);
 }
 
-function scoreRevenuPrincipal(monthlyIncome: number): { pts: number; detailFr: string } {
-  const x = Number(monthlyIncome) || 0;
-  if (x < MIN_INCOME_FLOOR) {
-    return {
-      pts: 0,
-      detailFr: `Revenu net mensuel déclaré (${Math.round(x)} TND) est inférieur au plancher retenu pour l’analyse (${MIN_INCOME_FLOOR} TND).`,
-    };
-  }
-  const t = clamp((x - MIN_INCOME_FLOOR) / (MAX_INCOME_REF - MIN_INCOME_FLOOR), 0, 1);
-  const pts = Math.round(30 * Math.pow(t, 0.85));
-  return {
-    pts,
-    detailFr: `Revenu net mensuel principal : ${Math.round(x).toLocaleString('fr-FR')} TND. Plus le revenu principal est élevé (dans des limites raisonnables), plus la note de ce volet augmente (max. 30 pts). Référence haute : ${MAX_INCOME_REF.toLocaleString('fr-FR')} TND.`,
-  };
+/** Points selon le taux d’endettement (ratio 0–1+). Max 60. Plus le taux est bas, plus la note est élevée. */
+function scoreFromDebtRatio(ratio: number): number {
+  if (ratio <= 0.25) return MAX_DEBT_POINTS;
+  if (ratio <= 0.33) return 50;
+  if (ratio <= 0.4) return 40;
+  if (ratio <= 0.5) return 25;
+  if (ratio <= 0.6) return 12;
+  return 0;
 }
 
-function scoreCapaciteEndettement(
-  totalResources: number,
-  fixedCharges: number,
-  newPayment: number
-): { pts: number; detailFr: string; ratioPercent: number | null } {
-  const res = Math.max(totalResources, 1);
-  const chargesTotales = fixedCharges + newPayment;
-  const ratio = chargesTotales / res;
-  const ratioPercent = Math.round(ratio * 1000) / 10;
-
-  let pts: number;
-  if (ratio <= 0.25) pts = 40;
-  else if (ratio <= 0.33) pts = 34;
-  else if (ratio <= 0.4) pts = 28;
-  else if (ratio <= 0.5) pts = 18;
-  else if (ratio <= 0.6) pts = 8;
-  else pts = 0;
-
-  return {
-    pts,
-    detailFr: `Capacité d’endettement : charges fixes (loyer/prêt logement, autres charges, mensualités crédits en cours) + mensualité estimée du nouveau crédit, rapportées aux revenus mensuels totaux (net + autres revenus). Taux obtenu : ${ratioPercent} %. Bonnes pratiques : rester nettement sous 40 % (référence fréquemment utilisée). Plus le taux est bas, plus la note est élevée (max. 40 pts).`,
-    ratioPercent,
-  };
-}
-
-function scoreRevenusComplementaires(additionalIncome: number, monthlyIncome: number): { pts: number; detailFr: string } {
-  const add = Math.max(0, Number(additionalIncome) || 0);
-  const main = Math.max(0, Number(monthlyIncome) || 0);
-  if (add <= 0) {
-    return {
-      pts: 10,
-      detailFr: `Aucun autre revenu mensuel déclaré : attribution d’une partie modérée des points (10 / 20), sans pénalité forte — le volet « revenu principal » et « capacité d’endettement » portent l’essentiel du jugement.`,
-    };
-  }
-  const share = main > 0 ? add / main : 1;
-  const base = 12 + Math.min(8, Math.round(share * 16));
-  const pts = clamp(base, 12, 20);
-  return {
-    pts,
-    detailFr: `Autres revenus mensuels : ${Math.round(add).toLocaleString('fr-FR')} TND. Ils augmentent vos ressources totales et peuvent améliorer la note jusqu’à 20 pts selon leur poids par rapport au revenu principal.`,
-  };
-}
-
-function scoreChargeDuPret(creditAmount: number, totalMonthlyResources: number, durationMonths: number): { pts: number; detailFr: string } {
-  const annualResources = Math.max(totalMonthlyResources, 1) * 12;
-  const amount = Math.max(0, Number(creditAmount) || 0);
-  const multiple = amount / annualResources;
-  let pts: number;
-  if (multiple <= 1.5) pts = 10;
-  else if (multiple <= 2.5) pts = 7;
-  else if (multiple <= 4) pts = 4;
-  else pts = 1;
-
-  return {
-    pts,
-    detailFr: `Rapport entre le montant demandé (${Math.round(amount).toLocaleString('fr-FR')} TND) et vos revenus annuels estimés (${Math.round(annualResources).toLocaleString('fr-FR')} TND, sur la base des revenus mensuels déclarés × 12). Multiple : ${multiple.toFixed(2)}. Durée déclarée : ${durationMonths} mois. Un multiple élevé augmente le risque relatif ; ce volet apporte au plus 10 pts.`,
-  };
+/** Points selon garantie ÷ montant. Max 40. Sans garantie déclarée → 0. */
+function scoreFromGuaranteeRatio(ratio: number, hasGuarantee: boolean): number {
+  if (!hasGuarantee) return 0;
+  if (ratio >= 1.2) return MAX_GUARANTEE_POINTS;
+  if (ratio >= 0.9) return 32;
+  if (ratio >= 0.6) return 22;
+  if (ratio >= 0.35) return 12;
+  return 5;
 }
 
 export function creditScoringInputFromDbRow(row: {
@@ -137,7 +82,12 @@ export function creditScoringInputFromDbRow(row: {
   loan_payment: number | null;
   amount: number | unknown;
   duration: number | unknown;
+  guarantee_estimated_value?: number | null;
 }): CreditScoringInput {
+  const gRaw = row.guarantee_estimated_value;
+  const guaranteeEstimatedValue =
+    gRaw != null && Number.isFinite(Number(gRaw)) && Number(gRaw) > 0 ? Number(gRaw) : 0;
+
   return {
     monthlyIncome: Number(row.monthly_income) || 0,
     additionalIncome: Number(row.additional_income) || 0,
@@ -146,6 +96,7 @@ export function creditScoringInputFromDbRow(row: {
     loanPayment: Number(row.loan_payment) || 0,
     creditAmount: Number(row.amount) || 0,
     durationMonths: Math.round(Number(row.duration) || 0),
+    guaranteeEstimatedValue,
   };
 }
 
@@ -157,49 +108,47 @@ export function computeCreditScoring(input: CreditScoringInput): CreditScoringRe
   const loanPayment = Math.max(0, Number(input.loanPayment) || 0);
   const creditAmount = Math.max(0, Number(input.creditAmount) || 0);
   const durationMonths = Math.max(0, Math.round(Number(input.durationMonths) || 0));
+  const guaranteeEstimatedValue = Math.max(0, Number(input.guaranteeEstimatedValue) || 0);
 
   const totalMonthlyResources = monthlyIncome + additionalIncome;
   const fixedMonthlyCharges = rentMortgage + otherCharges + loanPayment;
   const estimatedNewMonthlyPayment = estimateMonthlyPayment(creditAmount, durationMonths, SCORING_ANNUAL_RATE_INDICATIVE);
 
-  const r1 = scoreRevenuPrincipal(monthlyIncome);
-  const r2 = scoreCapaciteEndettement(totalMonthlyResources, fixedMonthlyCharges, estimatedNewMonthlyPayment);
-  const r3 = scoreRevenusComplementaires(additionalIncome, monthlyIncome);
-  const r4 = scoreChargeDuPret(creditAmount, totalMonthlyResources, durationMonths);
+  const res = Math.max(totalMonthlyResources, 1);
+  const chargesTotales = fixedMonthlyCharges + estimatedNewMonthlyPayment;
+  const debtRatio = chargesTotales / res;
+  const debtRatioPercent = Math.round(debtRatio * 1000) / 10;
 
-  let total = r1.pts + r2.pts + r3.pts + r4.pts;
-  total = clamp(Math.round(total), 0, 100);
+  const debtPts = scoreFromDebtRatio(debtRatio);
+  const principal = Math.max(creditAmount, 0);
+  const hasGuarantee = principal > 0 && guaranteeEstimatedValue > 0;
+  const guaranteeRatio = principal > 0 ? guaranteeEstimatedValue / principal : 0;
+  const guaranteeRatioPercent = hasGuarantee ? Math.round(guaranteeRatio * 1000) / 10 : null;
+  const guaranteePts = scoreFromGuaranteeRatio(guaranteeRatio, hasGuarantee);
 
+  let total = clamp(Math.round(debtPts + guaranteePts), 0, 100);
   const category: CreditScoringResult['category'] = total >= 70 ? 'high' : total >= 50 ? 'medium' : 'low';
+
+  const debtDetail = `Taux d’endettement : (charges fixes ${Math.round(fixedMonthlyCharges).toLocaleString('fr-FR')} TND + mensualité estimée du nouveau crédit ${Math.round(estimatedNewMonthlyPayment).toLocaleString('fr-FR')} TND) ÷ revenus mensuels totaux ${Math.round(res).toLocaleString('fr-FR')} TND = ${debtRatioPercent} %. Plus ce taux est bas, plus la note de ce volet est élevée (max. ${MAX_DEBT_POINTS} pts). Référence courante : rester sous 40 %.`;
+
+  const guaranteeDetail = hasGuarantee
+    ? `Valeur estimative de la garantie ${Math.round(guaranteeEstimatedValue).toLocaleString('fr-FR')} TND ÷ montant demandé ${Math.round(principal).toLocaleString('fr-FR')} TND ≈ ${guaranteeRatioPercent} %. Plus le ratio est élevé, plus la note de ce volet augmente (max. ${MAX_GUARANTEE_POINTS} pts).`
+    : `Aucune valeur de garantie estimative déclarée (ou montant nul) : 0 pt sur ${MAX_GUARANTEE_POINTS} possibles pour ce volet.`;
 
   const components: ScoreComponent[] = [
     {
-      id: 'revenu_principal',
-      title: 'Revenu net mensuel principal',
-      points: r1.pts,
-      maxPoints: 30,
-      detailFr: r1.detailFr,
+      id: 'taux_endettement',
+      title: 'Taux d’endettement',
+      points: debtPts,
+      maxPoints: MAX_DEBT_POINTS,
+      detailFr: debtDetail,
     },
     {
-      id: 'capacite_endettement',
-      title: 'Capacité d’endettement (charges / revenus)',
-      points: r2.pts,
-      maxPoints: 40,
-      detailFr: r2.detailFr,
-    },
-    {
-      id: 'revenus_complementaires',
-      title: 'Autres revenus mensuels',
-      points: r3.pts,
-      maxPoints: 20,
-      detailFr: r3.detailFr,
-    },
-    {
-      id: 'charge_pret',
-      title: 'Montant de la demande / revenus annuels',
-      points: r4.pts,
-      maxPoints: 10,
-      detailFr: r4.detailFr,
+      id: 'garantie_estimee',
+      title: 'Garantie estimée / montant demandé',
+      points: guaranteePts,
+      maxPoints: MAX_GUARANTEE_POINTS,
+      detailFr: guaranteeDetail,
     },
   ];
 
@@ -210,60 +159,44 @@ export function computeCreditScoring(input: CreditScoringInput): CreditScoringRe
     estimatedNewMonthlyPayment,
     totalMonthlyResources,
     fixedMonthlyCharges,
-    debtRatioAfterNewLoanPercent: r2.ratioPercent,
+    debtRatioAfterNewLoanPercent: debtRatioPercent,
+    guaranteeToLoanPercent: guaranteeRatioPercent,
   };
 }
 
-/** Texte pédagogique complet pour l’interface (français). */
 export const SCORING_DOCUMENTATION_FR = {
   titre: 'Comment est calculé votre score ?',
   introduction:
-    'Le score est un indicateur interne sur 100 points. Il est entièrement calculé à partir de données chiffrées de votre dossier : aucune pondération liée à la profession, au secteur ou à l’intitulé d’emploi n’est utilisée.',
+    'Le score sur 100 repose sur deux éléments seulement : votre taux d’endettement après prise en compte du nouveau crédit, et la couverture par la valeur estimative de votre garantie par rapport au montant demandé. Aucune autre règle (profession, secteur, etc.) n’est appliquée.',
   blocs: [
     {
-      sousTitre: '1. Revenu net mensuel principal (jusqu’à 30 points)',
+      sousTitre: `1. Taux d’endettement (jusqu’à ${MAX_DEBT_POINTS} points)`,
       textes: [
-        'Il s’agit du revenu net mensuel que vous avez déclaré dans le formulaire (hors « autres revenus »).',
-        'Un revenu très bas par rapport à un plancher minimal réduit fortement ce volet ; au-delà, la note augmente progressivement jusqu’à un plafond de référence.',
+        'On additionne vos charges fixes mensuelles (loyer ou crédit logement, autres charges, mensualités des crédits en cours) et une mensualité estimée du nouveau crédit (taux annuel indicatif 8 % et durée déclarée — non contractuel).',
+        'On divise ce total par vos revenus mensuels totaux (revenu net principal + autres revenus déclarés).',
+        'Plus le pourcentage obtenu est faible, plus vous marquez de points. En pratique, un taux nettement sous 40 % est souvent visé.',
       ],
     },
     {
-      sousTitre: '2. Capacité d’endettement (jusqu’à 40 points)',
+      sousTitre: `2. Garantie estimée / montant du crédit (jusqu’à ${MAX_GUARANTEE_POINTS} points)`,
       textes: [
-        'On calcule d’abord vos revenus mensuels totaux : revenu net principal + autres revenus mensuels déclarés.',
-        'On additionne vos charges récurrentes : loyer ou mensualité de prêt immobilier, autres charges mensuelles, mensualités de crédits en cours.',
-        'On ajoute une mensualité estimée pour le nouveau crédit demandé, calculée avec une hypothèse de taux annuel nominal indicatif (8 %) et la durée déclarée — à titre pédagogique, sans valeur contractuelle.',
-        'Le taux d’endettement retenu est : (charges fixes + mensualité estimée du nouveau crédit) ÷ revenus mensuels totaux. Plus ce ratio est faible, plus la note est élevée. La zone au-dessus de 40 % est généralement considérée comme sensible.',
+        'On utilise la valeur estimative de la garantie que vous avez indiquée (TND), divisée par le montant du crédit demandé.',
+        'Plus ce rapport est élevé, plus ce volet augmente le score. Si vous ne renseignez pas de valeur, ce volet vaut 0 point.',
       ],
     },
     {
-      sousTitre: '3. Autres revenus mensuels (jusqu’à 20 points)',
+      sousTitre: 'Barème du score total',
       textes: [
-        'Les revenus complémentaires déclarés renforcent votre profil lorsqu’ils existent.',
-        'S’il n’y en a pas, une partie modérée des points est tout de même attribuée : l’absence d’autres revenus ne pénalise pas seule ce critère.',
+        '70 à 100 : catégorie « élevé ».',
+        '50 à 69 : catégorie « moyen ».',
+        '0 à 49 : catégorie « faible ».',
       ],
     },
     {
-      sousTitre: '4. Montant demandé par rapport aux revenus annuels (jusqu’à 10 points)',
+      sousTitre: 'Limites',
       textes: [
-        'On compare le montant du crédit demandé à une estimation de vos revenus sur une année (revenus mensuels totaux × 12).',
-        'Un multiple très élevé (emprunt important par rapport aux revenus) réduit ce volet ; un multiple modéré le conserve élevé.',
-      ],
-    },
-    {
-      sousTitre: 'Barème qualitatif du score total',
-      textes: [
-        '70 à 100 : profil favorable (catégorie « élevé »).',
-        '50 à 69 : profil intermédiaire (catégorie « moyen ») — instruction pouvant nécessiter garanties ou compléments.',
-        '0 à 49 : profil plus fragile (catégorie « faible ») — risque ou charges élevées au regard des revenus déclarés.',
-      ],
-    },
-    {
-      sousTitre: 'Limites et transparence',
-      textes: [
-        'Ce score ne remplace pas une analyse manuelle complète (pièces justificatives, historique bancaire, politique interne de la banque).',
-        'La mensualité estimée du nouveau crédit est une approximation à partir d’un taux indicatif ; le taux réel peut différer.',
-        'Les données utilisées sont celles saisies dans votre demande ; toute erreur de saisie impacte le résultat.',
+        'Ce score est indicatif ; il ne remplace pas l’instruction complète du dossier.',
+        'La mensualité du nouveau crédit est une estimation ; le taux réel peut différer.',
       ],
     },
   ],

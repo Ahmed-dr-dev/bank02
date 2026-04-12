@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardCard from '@/components/DashboardCard';
+import StatusDistributionDonut from '@/components/StatusDistributionDonut';
 import Link from 'next/link';
 
 type Stats = {
@@ -123,24 +124,17 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Par statut</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-l-4 border-green-500">
-              <span className="font-semibold text-gray-700">Approuvées</span>
-              <span className="text-3xl font-bold text-green-600">{counts.approved}</span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border-l-4 border-yellow-500">
-              <span className="font-semibold text-gray-700">En attente</span>
-              <span className="text-3xl font-bold text-yellow-600">{counts.pending}</span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-l-4 border-orange-500">
-              <span className="font-semibold text-gray-700">Garanties requises</span>
-              <span className="text-3xl font-bold text-orange-600">{counts.guarantees_required}</span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border-l-4 border-red-500">
-              <span className="font-semibold text-gray-700">Refusées</span>
-              <span className="text-3xl font-bold text-red-600">{counts.rejected}</span>
-            </div>
-          </div>
+          <StatusDistributionDonut
+            approved={counts.approved}
+            pending={counts.pending}
+            guarantees={counts.guarantees_required}
+            rejected={counts.rejected}
+            legendLabels={{
+              approved: 'Approuvées',
+              guarantees: 'Garanties requises',
+              rejected: 'Refusées',
+            }}
+          />
         </div>
       </div>
 

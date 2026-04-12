@@ -5,11 +5,7 @@ import { useRouter } from 'next/navigation';
 import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import { validateStep, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
-import {
-  GUARANTEE_TYPE_OPTIONS,
-  defaultGuaranteeEstimatedValueString,
-  guaranteeSelectOptionShortLabel,
-} from '@/lib/guaranteeTypes';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionShortLabel } from '@/lib/guaranteeTypes';
 
 const emptyForm: RequestFormData = {
   firstName: '',
@@ -53,7 +49,7 @@ export default function NewRequest() {
     setFormData((f) => ({
       ...f,
       guaranteeType: v,
-      guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+      guaranteeEstimatedValue: '',
     }));
     setErrors((er) => {
       const next = { ...er };
@@ -229,7 +225,7 @@ export default function NewRequest() {
               <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Loyer / Prêt (TND/mois)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loyer (TND/mois)</label>
               <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} />
               {err('rentMortgage') && <p className="text-red-500 text-sm mt-1">{err('rentMortgage')}</p>}
             </div>
@@ -304,7 +300,7 @@ export default function NewRequest() {
                 value={formData.guaranteeEstimatedValue ?? ''}
                 onChange={update('guaranteeEstimatedValue')}
                 className={inputClass('guaranteeEstimatedValue')}
-                placeholder="Prérempli selon le type — modifiable"
+                placeholder="Saisir la valeur estimée en TND"
               />
               <p className="text-xs text-gray-500 mt-1">Indicatif, non contractuel. Laisser vide si « Aucune ».</p>
               {err('guaranteeEstimatedValue') && (

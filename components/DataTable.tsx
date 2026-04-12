@@ -14,6 +14,7 @@ function rowScoring(request: CreditRequest | undefined) {
     loanPayment: Number(request?.loanPayment) || 0,
     creditAmount: Number(request?.amount) || 0,
     durationMonths: Number(request?.duration) || 0,
+    guaranteeEstimatedValue: Number(request?.guaranteeEstimatedValue) || 0,
   });
 }
 

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import ScoreBadge from '@/components/ScoreBadge';
+import { computeCreditScoring, SCORING_ANNUAL_RATE_INDICATIVE } from '@/lib/creditScoring';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionShortLabel } from '@/lib/guaranteeTypes';
 
 interface SimulatorCardProps {
   locale?: 'fr' | 'en';
@@ -23,6 +26,29 @@ export default function SimulatorCard({ locale = 'en', currency = 'MAD' }: Simul
   const [existingLoanPayment, setExistingLoanPayment] = useState(0);
   const [employmentStatus, setEmploymentStatus] = useState<string>('Salarié(e)');
   const [creditPurpose, setCreditPurpose] = useState<string>('Achat immobilier');
+  const [guaranteeType, setGuaranteeType] = useState('');
+  const [guaranteeEstimatedValue, setGuaranteeEstimatedValue] = useState('');
+
+  const onGuaranteeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    setGuaranteeType(v);
+    setGuaranteeEstimatedValue('');
+  };
+
+  const scoring = useMemo(
+    () =>
+      computeCreditScoring({
+        monthlyIncome: income,
+        additionalIncome,
+        rentMortgage,
+        otherCharges,
+        loanPayment: existingLoanPayment,
+        creditAmount: amount,
+        durationMonths: duration,
+        guaranteeEstimatedValue: Math.max(0, Number(String(guaranteeEstimatedValue).replace(/\s/g, '')) || 0),
+      }),
+    [amount, duration, income, additionalIncome, rentMortgage, otherCharges, existingLoanPayment, guaranteeEstimatedValue]
+  );
 
   const monthlyRate = ANNUAL_RATE / 12;
   const monthlyPayment =
@@ -35,22 +61,8 @@ export default function SimulatorCard({ locale = 'en', currency = 'MAD' }: Simul
 
   const totalIncome = (income || 0) + (additionalIncome || 0);
   const totalExistingCharges = (rentMortgage || 0) + (otherCharges || 0) + (existingLoanPayment || 0);
-  const debtRatioNewCreditOnly = totalIncome > 0 ? (monthlyPayment / totalIncome) * 100 : 0;
   const debtRatioTotal =
     totalIncome > 0 ? ((monthlyPayment + totalExistingCharges) / totalIncome) * 100 : 0;
-
-  // Probabilité basée sur taux d'endettement total, stabilité emploi, et objet
-  let acceptanceProbability = 0;
-  if (totalIncome <= 0) acceptanceProbability = 0;
-  else if (debtRatioTotal < MAX_DEBT_RATIO_GOOD) acceptanceProbability = 88;
-  else if (debtRatioTotal < MAX_DEBT_RATIO_ACCEPTABLE) acceptanceProbability = 68;
-  else if (debtRatioTotal < MAX_DEBT_RATIO_RISKY) acceptanceProbability = 38;
-  else acceptanceProbability = 12;
-
-  const employmentBonus =
-    employmentStatus === 'Salarié(e)' ? 5 : employmentStatus === 'Retraité(e)' ? 3 : 0;
-  const purposeBonus = creditPurpose === 'Achat immobilier' ? 4 : creditPurpose === 'Achat véhicule' ? 2 : 0;
-  acceptanceProbability = Math.min(95, acceptanceProbability + employmentBonus + purposeBonus);
 
   // Montant max recommandé (33% du revenu net pour la mensualité, charges existantes déduites)
   const maxAffordablePayment =
@@ -143,7 +155,7 @@ export default function SimulatorCard({ locale = 'en', currency = 'MAD' }: Simul
         <div className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {isFr ? 'Loyer / prêt en cours (TND/mois)' : 'Rent / existing mortgage'}
+              {isFr ? 'Loyer (TND/mois)' : 'Rent (per month)'}
             </label>
             <input
               type="number"
@@ -210,6 +222,42 @@ export default function SimulatorCard({ locale = 'en', currency = 'MAD' }: Simul
               <option value="Autre">{isFr ? 'Autre' : 'Other'}</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {isFr ? 'Type de garantie' : 'Guarantee type'}
+            </label>
+            <select
+              value={guaranteeType}
+              onChange={onGuaranteeTypeChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">{isFr ? 'Choisir' : 'Choose'}</option>
+              {GUARANTEE_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {guaranteeSelectOptionShortLabel(opt)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {isFr ? 'Valeur estimative de la garantie (TND)' : 'Estimated guarantee value'}
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={guaranteeEstimatedValue}
+              onChange={(e) => setGuaranteeEstimatedValue(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={isFr ? 'Saisir la valeur en TND' : 'Enter value in TND'}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {isFr
+                ? 'Utilisée dans le score comme à la demande (ratio garantie ÷ montant).'
+                : 'Used in the score like the application (guarantee ÷ amount).'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -269,37 +317,56 @@ export default function SimulatorCard({ locale = 'en', currency = 'MAD' }: Simul
           </div>
         </div>
 
-        {/* Probabilité d'acceptation */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
-            <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-              {isFr ? "Probabilité d'acceptation (estimation)" : 'Acceptance probability (estimate)'}
-            </span>
-            <span
-              className={`text-3xl font-bold ${
-                acceptanceProbability > 70 ? 'text-green-600' : acceptanceProbability > 40 ? 'text-amber-600' : 'text-red-600'
-              }`}
-            >
-              {acceptanceProbability} %
-            </span>
+        {/* Score (même logique que la demande en ligne) */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-bold text-gray-700 uppercase tracking-wide block">
+                {isFr ? 'Score indicatif (même calcul que la demande)' : 'Indicative score (same as application)'}
+              </span>
+              <p className="text-xs text-gray-600 mt-1 max-w-xl">
+                {isFr
+                  ? `Deux critères : taux d’endettement (charges + mensualité du nouveau crédit à ${(SCORING_ANNUAL_RATE_INDICATIVE * 100).toFixed(0)} % indicatif) ÷ revenus mensuels totaux — max 60 pts ; garantie estimée ÷ montant demandé — max 40 pts.`
+                  : `Two factors: debt ratio (charges + new loan at ${(SCORING_ANNUAL_RATE_INDICATIVE * 100).toFixed(0)}% indicative) ÷ monthly income — max 60 pts; estimated guarantee ÷ loan amount — max 40 pts.`}
+              </p>
+            </div>
+            <ScoreBadge score={scoring.totalScore} category={scoring.category} size="lg" />
           </div>
           <div className="w-full bg-gray-300 rounded-full h-3 shadow-inner overflow-hidden">
             <div
               className={`h-3 rounded-full transition-all duration-500 ${
-                acceptanceProbability > 70
+                scoring.totalScore >= 70
                   ? 'bg-gradient-to-r from-green-500 to-green-600'
-                  : acceptanceProbability > 40
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600'
-                  : 'bg-gradient-to-r from-red-500 to-red-600'
+                  : scoring.totalScore >= 50
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600'
+                    : 'bg-gradient-to-r from-red-500 to-red-600'
               }`}
-              style={{ width: `${Math.min(100, acceptanceProbability)}%` }}
+              style={{ width: `${Math.min(100, Math.max(0, scoring.totalScore))}%` }}
             />
           </div>
+          <div className="grid sm:grid-cols-2 gap-2 text-xs text-gray-700">
+            {scoring.components.map((c) => (
+              <div key={c.id} className="flex justify-between gap-2 bg-white/60 rounded-lg px-2 py-1.5 border border-blue-100">
+                <span className="truncate" title={c.title}>
+                  {c.title}
+                </span>
+                <span className="font-semibold text-blue-900 shrink-0">
+                  {c.points}/{c.maxPoints}
+                </span>
+              </div>
+            ))}
+          </div>
+          {scoring.guaranteeToLoanPercent != null && (
+            <p className="text-xs text-gray-600">
+              {isFr ? 'Couverture garantie ÷ montant (score) :' : 'Guarantee ÷ loan (score):'}{' '}
+              <strong>{scoring.guaranteeToLoanPercent} %</strong>
+            </p>
+          )}
           {debtRatioTotal >= MAX_DEBT_RATIO_ACCEPTABLE && totalIncome > 0 && (
-            <p className="text-sm text-gray-600 mt-3">
+            <p className="text-sm text-gray-600">
               {isFr
-                ? "Réduire le montant ou allonger la durée peut améliorer vos chances (taux d'endettement &lt; 40 %)."
-                : 'Lower amount or longer duration may improve chances (debt ratio &lt; 40%).'}
+                ? "Réduire le montant ou allonger la durée peut améliorer le score (taux d'endettement avec le nouveau crédit)."
+                : 'Lower amount or longer duration may improve the score (debt ratio with new credit).'}
             </p>
           )}
         </div>

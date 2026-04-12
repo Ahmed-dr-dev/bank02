@@ -10,6 +10,7 @@ export default function Sidebar() {
     { href: '/admin/dashboard', label: 'Tableau de bord', icon: '📊' },
     { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
     { href: '/admin/loan-types', label: 'Types de crédit', icon: '🏦' },
+    { href: '/admin/assistant', label: 'Assistant', icon: '💬' },
     { href: '/admin/analytics', label: 'Analytiques', icon: '📈' },
     { href: '/admin/logs', label: 'Journal', icon: '📋' },
   ];

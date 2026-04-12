@@ -110,6 +110,7 @@ export default function ClientRequestDetail() {
       loanPayment: Number(request.loanPayment) || 0,
       creditAmount: Number(request.amount) || 0,
       durationMonths: Number(request.duration) || 0,
+      guaranteeEstimatedValue: Number(request.guaranteeEstimatedValue) || 0,
     });
   }, [request]);
 
@@ -142,6 +143,7 @@ export default function ClientRequestDetail() {
     loanPayment: Number(request.loanPayment) || 0,
     creditAmount: Number(request.amount) || 0,
     durationMonths: Number(request.duration) || 0,
+    guaranteeEstimatedValue: Number(request.guaranteeEstimatedValue) || 0,
   });
 
   const statusLabel =
@@ -234,7 +236,7 @@ export default function ClientRequestDetail() {
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Score et capacité financière</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Calcul objectif sur 100 — revenus, charges, endettement et poids du crédit demandé. La profession n’entre pas dans le calcul.
+                Score sur 100 : taux d’endettement (max. 60 pts) et garantie estimée ÷ montant demandé (max. 40 pts). La profession n’entre pas dans le calcul.
               </p>
             </div>
             <div className="p-6 space-y-6">
@@ -244,10 +246,10 @@ export default function ClientRequestDetail() {
                   <p className="text-sm font-medium text-gray-900">Interprétation</p>
                   <p className="text-sm text-gray-600 mt-1">
                     {sc.category === 'high'
-                      ? 'Profil favorable : revenus et capacité d’endettement cohérents avec la demande.'
+                      ? 'Profil favorable : endettement modéré et/ou bonne couverture par la garantie déclarée.'
                       : sc.category === 'medium'
-                        ? 'Profil intermédiaire : le dossier peut nécessiter des garanties ou des précisions.'
-                        : 'Profil plus contraint : charges ou montant demandé élevés par rapport aux revenus déclarés.'}
+                        ? 'Profil intermédiaire : endettement ou ratio garantie à surveiller.'
+                        : 'Profil plus contraint : endettement élevé ou garantie faible par rapport au montant.'}
                   </p>
                 </div>
               </div>
@@ -281,6 +283,16 @@ export default function ClientRequestDetail() {
                 </p>
                 <p className="text-xs text-gray-600 mt-2">
                   Formule : (charges fixes + mensualité estimée du nouveau crédit) ÷ (revenu principal + autres revenus). Référence courante : rester sous 40 %.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+                <p className="text-sm font-medium text-gray-900">Couverture garantie (pour le score)</p>
+                <p className="text-2xl font-bold text-emerald-900 mt-1">
+                  {sc.guaranteeToLoanPercent != null ? `${sc.guaranteeToLoanPercent} %` : '—'}
+                </p>
+                <p className="text-xs text-gray-600 mt-2">
+                  Valeur estimative de la garantie ÷ montant demandé. Sans valeur déclarée, ce volet ne rapporte pas de point (jusqu’à 8 pts si la couverture est forte).
                 </p>
               </div>
 
@@ -367,7 +379,7 @@ export default function ClientRequestDetail() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <LabelValue label="Revenu mensuel" value={formatTND(request.monthlyIncome)} />
                 <LabelValue label="Autres revenus" value={request.additionalIncome != null && request.additionalIncome > 0 ? formatTND(request.additionalIncome) : undefined} hideIfEmpty />
-                <LabelValue label="Loyer / prêt" value={request.rentMortgage != null && request.rentMortgage > 0 ? formatTND(request.rentMortgage) : undefined} hideIfEmpty />
+                <LabelValue label="Loyer (TND/mois)" value={request.rentMortgage != null && request.rentMortgage > 0 ? formatTND(request.rentMortgage) : undefined} hideIfEmpty />
                 <LabelValue label="Autres charges" value={request.otherCharges != null && request.otherCharges > 0 ? formatTND(request.otherCharges) : undefined} hideIfEmpty />
                 <LabelValue label="Crédits en cours" value={request.existingLoans} hideIfEmpty />
                 <LabelValue label="Mensualité des crédits" value={request.loanPayment != null && request.loanPayment > 0 ? formatTND(request.loanPayment) : undefined} hideIfEmpty />

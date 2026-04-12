@@ -7,11 +7,7 @@ import StepForm from '@/components/StepForm';
 import FileUpload from '@/components/FileUpload';
 import type { CreditRequest } from '@/lib/mockData';
 import { validateStep, validateEditCreditRequestSubmit, CIN_MAX_LENGTH, type RequestFormData } from '@/lib/creditRequestValidation';
-import {
-  GUARANTEE_TYPE_OPTIONS,
-  defaultGuaranteeEstimatedValueString,
-  guaranteeSelectOptionShortLabel,
-} from '@/lib/guaranteeTypes';
+import { GUARANTEE_TYPE_OPTIONS, guaranteeSelectOptionShortLabel } from '@/lib/guaranteeTypes';
 
 function requestToFormData(r: CreditRequest): RequestFormData {
   const parts = (r.clientName || '').trim().split(/\s+/);
@@ -39,12 +35,10 @@ function requestToFormData(r: CreditRequest): RequestFormData {
     duration: r.duration != null ? String(r.duration) : '',
     creditPurpose: r.creditPurpose ?? '',
     guaranteeType: r.guaranteeType ?? '',
-    guaranteeEstimatedValue: (() => {
-      if (r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))) {
-        return String(Math.round(Number(r.guaranteeEstimatedValue)));
-      }
-      return defaultGuaranteeEstimatedValueString(r.guaranteeType ?? '');
-    })(),
+    guaranteeEstimatedValue:
+      r.guaranteeEstimatedValue != null && Number.isFinite(Number(r.guaranteeEstimatedValue))
+        ? String(Math.round(Number(r.guaranteeEstimatedValue)))
+        : '',
     notes: r.notes ?? '',
   };
 }
@@ -222,7 +216,7 @@ function ClientRequests() {
         ? {
             ...f,
             guaranteeType: v,
-            guaranteeEstimatedValue: defaultGuaranteeEstimatedValueString(v),
+            guaranteeEstimatedValue: '',
           }
         : f
     );
@@ -540,7 +534,7 @@ function ClientRequests() {
                     <input type="number" min={0} step={100} value={formData.additionalIncome ?? ''} onChange={update('additionalIncome')} className={inputClass('additionalIncome')} placeholder="0" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Loyer / Prêt (TND/mois)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Loyer (TND/mois)</label>
                     <input type="number" min={0} value={formData.rentMortgage ?? ''} onChange={update('rentMortgage')} className={inputClass('rentMortgage')} placeholder="3000" />
                     {err('rentMortgage') && <p className="text-red-500 text-sm mt-1">{err('rentMortgage')}</p>}
                   </div>
@@ -612,7 +606,7 @@ function ClientRequests() {
                       value={formData.guaranteeEstimatedValue ?? ''}
                       onChange={update('guaranteeEstimatedValue')}
                       className={inputClass('guaranteeEstimatedValue')}
-                      placeholder="Prérempli selon le type"
+                      placeholder="Ex. 150 000"
                     />
                     {err('guaranteeEstimatedValue') && (
                       <p className="text-red-500 text-sm mt-1">{err('guaranteeEstimatedValue')}</p>

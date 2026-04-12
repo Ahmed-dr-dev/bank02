@@ -1,24 +1,32 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
-import { STATIC_REPLIES } from './chatBotReplies';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getAssistantReplyForQuery, type AssistantReplyRow } from '@/lib/assistantMatch';
 
 type Message = { role: 'user' | 'assistant'; content: string };
-
-function getStaticReply(query: string): string {
-  const q = query.toLowerCase().trim();
-  if (!q) return 'Pouvez-vous préciser votre question ?';
-  for (const { keywords, reply } of STATIC_REPLIES) {
-    if (keywords.some((k) => q.includes(k))) return reply;
-  }
-  return "Je n'ai pas trouvé de réponse précise à votre question. Vous pouvez : consulter les pages « Comment ça marche » et « Fonctionnalités » sur le site, utiliser le simulateur, ou contacter le support : contact@creditpro.tn / +216 70 000 000.";
-}
 
 export default function ChatBot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [customReplies, setCustomReplies] = useState<AssistantReplyRow[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/assistant-replies')
+      .then((r) => (r.ok ? r.json() : { replies: [] }))
+      .then((d) => {
+        const list = Array.isArray(d.replies) ? d.replies : [];
+        setCustomReplies(
+          list.map((row: { id?: string; keywords?: unknown; reply?: string }) => ({
+            id: row.id,
+            keywords: Array.isArray(row.keywords) ? row.keywords.map(String) : [],
+            reply: String(row.reply ?? ''),
+          })),
+        );
+      })
+      .catch(() => setCustomReplies([]));
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,10 +37,10 @@ export default function ChatBot() {
     if (!text) return;
     setInput('');
     setMessages((m) => [...m, { role: 'user', content: text }]);
-    const reply = getStaticReply(text);
+    const reply = getAssistantReplyForQuery(text, customReplies);
     setMessages((m) => [...m, { role: 'assistant', content: reply }]);
     scrollToBottom();
-  }, [input, scrollToBottom]);
+  }, [input, customReplies, scrollToBottom]);
 
   return (
     <>

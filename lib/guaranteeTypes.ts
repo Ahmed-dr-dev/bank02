@@ -40,13 +40,6 @@ export function guaranteeSelectOptionShortLabel(opt: GuaranteeTypeOption): strin
   return opt.value;
 }
 
-/** Valeur par défaut pour le champ « valeur estimative » (TND) selon le type choisi. */
-export function defaultGuaranteeEstimatedValueString(typeValue: string): string {
-  const opt = getGuaranteeTypeOption(typeValue);
-  if (opt?.estimatedAmountTnd == null) return '';
-  return String(Math.round(opt.estimatedAmountTnd));
-}
-
 /** Texte pour fiche dossier / PDF : libellé du type uniquement (montant affiché à part si besoin). */
 export function describeGuaranteeForDisplay(storedType: string | undefined | null): string {
   if (!storedType?.trim()) return '';

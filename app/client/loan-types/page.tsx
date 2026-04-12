@@ -122,7 +122,7 @@ export default function ClientLoanTypes() {
         </p>
         <div className="flex flex-wrap gap-4">
           <Link
-            href="/client/simulator"
+            href="/simulateur"
             className="inline-flex items-center px-5 py-2.5 bg-white border-2 border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors"
           >
             Simulateur

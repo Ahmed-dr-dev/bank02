@@ -22,7 +22,6 @@ export default function ClientSidebar() {
   const menuItems = [
     { href: '/client/dashboard', label: 'Accueil', icon: '🏠' },
     { href: '/client/new-request', label: 'Demande de crédit', icon: '📝' },
-    { href: '/client/simulator', label: 'Simulateur', icon: '💰' },
     { href: '/client/loan-types', label: 'Types de crédit', icon: '🏦' },
     { href: '/client/requests', label: 'Suivi des dossiers', icon: '📄' },
     { href: '/client/messages', label: 'Messagerie', icon: '💬', badge: unread },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import StatusDistributionDonut from '@/components/StatusDistributionDonut';
 
 type OfficerStats = {
   totalRequests: number;
@@ -108,24 +109,12 @@ export default function AgentDashboard() {
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-5">Répartition par statut</h2>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border-l-4 border-green-500">
-              <span className="font-medium text-gray-700">Approuvés</span>
-              <span className="text-2xl font-bold text-green-600">{s.approvedRequests}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-xl border-l-4 border-yellow-500">
-              <span className="font-medium text-gray-700">En attente</span>
-              <span className="text-2xl font-bold text-yellow-600">{s.pendingRequests}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-xl border-l-4 border-orange-400">
-              <span className="font-medium text-gray-700">Garanties requises</span>
-              <span className="text-2xl font-bold text-orange-600">{s.guaranteesRequests}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-red-50 rounded-xl border-l-4 border-red-500">
-              <span className="font-medium text-gray-700">Refusés</span>
-              <span className="text-2xl font-bold text-red-600">{s.rejectedRequests}</span>
-            </div>
-          </div>
+          <StatusDistributionDonut
+            approved={s.approvedRequests}
+            pending={s.pendingRequests}
+            guarantees={s.guaranteesRequests}
+            rejected={s.rejectedRequests}
+          />
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">

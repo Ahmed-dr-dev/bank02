@@ -210,7 +210,7 @@ export default function AgentRequestDetail() {
                   </div>
                   <div className="border-t border-gray-100 pt-4 grid md:grid-cols-3 gap-4">
                     <LabelVal label="Revenus complémentaires" value={request.additionalIncome ? formatTND(request.additionalIncome) : null} />
-                    <LabelVal label="Loyer / Crédit immobilier" value={request.rentMortgage ? formatTND(request.rentMortgage) : null} />
+                    <LabelVal label="Loyer (TND/mois)" value={request.rentMortgage ? formatTND(request.rentMortgage) : null} />
                     <LabelVal label="Autres charges" value={request.otherCharges ? formatTND(request.otherCharges) : null} />
                     <LabelVal label="Prêts existants" value={request.existingLoans} />
                     <LabelVal label="Mensualité prêt existant" value={request.loanPayment ? formatTND(request.loanPayment) : null} />

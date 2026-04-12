@@ -97,6 +97,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       loan_payment: loanPayment,
       amount,
       duration,
+      guarantee_estimated_value,
     });
 
     const updatePayload = {
