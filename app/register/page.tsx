@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isValidTunisianIban, isValidTunisianRib, normalizeIban, normalizeRib } from '@/lib/bankIdentifiers';
-
 export default function RegisterPage() {
   const router = useRouter();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -13,10 +11,18 @@ export default function RegisterPage() {
     lastName: '',
     email: '',
     phone: '',
-    rib: '',
-    iban: '',
     password: '',
     confirmPassword: '',
+    cin: '',
+    date_of_birth: '',
+    address: '',
+    city: '',
+    postal_code: '',
+    country: 'Tunisie',
+    profession: '',
+    employer: '',
+    years_experience: '',
+    monthly_income: '',
   });
 
   const validate = (): boolean => {
@@ -28,12 +34,6 @@ export default function RegisterPage() {
     const phoneDigits = form.phone.replace(/\D/g, '');
     if (!form.phone.trim()) e.phone = 'Téléphone requis';
     else if (!/^(216[0-9]{8}|[0-9]{8})$/.test(phoneDigits)) e.phone = 'Numéro tunisien invalide (8 chiffres ou +216 XX XXX XXX)';
-    const ribNorm = normalizeRib(form.rib);
-    if (!ribNorm) e.rib = 'RIB requis (20 chiffres)';
-    else if (!isValidTunisianRib(ribNorm)) e.rib = 'RIB invalide : exactement 20 chiffres';
-    const ibanNorm = normalizeIban(form.iban);
-    if (!ibanNorm) e.iban = 'IBAN requis';
-    else if (!isValidTunisianIban(ibanNorm)) e.iban = 'IBAN invalide (Tunisie : TN + 22 caractères, 24 au total)';
     if (!form.password) e.password = 'Mot de passe requis';
     else if (form.password.length < 6) e.password = 'Minimum 6 caractères';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Les mots de passe ne correspondent pas';
@@ -58,9 +58,17 @@ export default function RegisterPage() {
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
-          rib: normalizeRib(form.rib),
-          iban: normalizeIban(form.iban),
           password: form.password,
+          cin: form.cin || null,
+          date_of_birth: form.date_of_birth || null,
+          address: form.address || null,
+          city: form.city || null,
+          postal_code: form.postal_code || null,
+          country: form.country || 'Tunisie',
+          profession: form.profession || null,
+          employer: form.employer || null,
+          years_experience: form.years_experience ? Number(form.years_experience) : null,
+          monthly_income: form.monthly_income ? Number(form.monthly_income) : null,
         }),
         credentials: 'include',
       });
@@ -94,110 +102,211 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-8" onSubmit={handleSubmit}>
             {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
-                <input
-                  type="text"
-                  value={form.firstName}
-                  onChange={update('firstName')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Sirine"
-                />
-                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
-                <input
-                  type="text"
-                  value={form.lastName}
-                  onChange={update('lastName')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Nciri"
-                />
-                {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
-              </div>
-            </div>
 
+            {/* Informations de connexion */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={update('email')}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="sirine.nciri@exemple.com"
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Informations personnelles</h3>
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Prénom <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={form.firstName}
+                      onChange={update('firstName')}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Sirine"
+                    />
+                    {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={form.lastName}
+                      onChange={update('lastName')}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Nciri"
+                    />
+                    {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date de naissance</label>
+                    <input
+                      type="date"
+                      value={form.date_of_birth}
+                      onChange={update('date_of_birth')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">CIN</label>
+                    <input
+                      type="text"
+                      value={form.cin}
+                      onChange={update('cin')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex. 12345678"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={update('email')}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="sirine.nciri@exemple.com"
+                    />
+                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone (Tunisie) <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={update('phone')}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="+216 XX XXX XXX"
+                    />
+                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Adresse */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de téléphone (Tunisie)</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={update('phone')}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="+216 XX XXX XXX"
-              />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Adresse</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Adresse</label>
+                  <input
+                    type="text"
+                    value={form.address}
+                    onChange={update('address')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Rue, numéro…"
+                  />
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ville</label>
+                    <input
+                      type="text"
+                      value={form.city}
+                      onChange={update('city')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Tunis"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Code postal</label>
+                    <input
+                      type="text"
+                      value={form.postal_code}
+                      onChange={update('postal_code')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="1000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pays</label>
+                    <input
+                      type="text"
+                      value={form.country}
+                      onChange={update('country')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">RIB (20 chiffres)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={form.rib}
-                  onChange={update('rib')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${errors.rib ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Ex. 07 12345 012345678901 12"
-                />
-                {errors.rib && <p className="text-red-500 text-sm mt-1">{errors.rib}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">IBAN</label>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  value={form.iban}
-                  onChange={(ev) => {
-                    setForm((f) => ({ ...f, iban: ev.target.value.toUpperCase() }));
-                    if (errors.iban) setErrors((er) => ({ ...er, iban: '' }));
-                  }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${errors.iban ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="TN59 … (24 caractères)"
-                />
-                {errors.iban && <p className="text-red-500 text-sm mt-1">{errors.iban}</p>}
+            {/* Situation professionnelle */}
+            <div>
+              <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Situation professionnelle</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
+                  <input
+                    type="text"
+                    value={form.profession}
+                    onChange={update('profession')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ingénieur, médecin…"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
+                  <input
+                    type="text"
+                    value={form.employer}
+                    onChange={update('employer')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nom de l'entreprise"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={form.years_experience}
+                    onChange={update('years_experience')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Revenu mensuel net (TND)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.monthly_income}
+                    onChange={update('monthly_income')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="2000"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={update('password')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Minimum 6 caractères"
-                />
-                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={update('confirmPassword')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Confirmez votre mot de passe"
-                />
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+            {/* Mot de passe */}
+            <div>
+              <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Sécurité</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe <span className="text-red-500">*</span></label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={update('password')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Minimum 6 caractères"
+                  />
+                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe <span className="text-red-500">*</span></label>
+                  <input
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={update('confirmPassword')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Confirmez votre mot de passe"
+                  />
+                  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                </div>
               </div>
             </div>
 

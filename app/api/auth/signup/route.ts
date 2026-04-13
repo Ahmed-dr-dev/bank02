@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { setProfileIdCookie } from '@/lib/session';
-import { isValidTunisianIban, isValidTunisianRib, normalizeIban, normalizeRib } from '@/lib/bankIdentifiers';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
@@ -9,20 +8,12 @@ export async function POST(request: Request) {
   const email = body.email?.trim()?.toLowerCase();
   const password = body.password;
   const fullName = [body.firstName, body.lastName].filter(Boolean).join(' ') || body.full_name || '';
-  const ribNorm = normalizeRib(body.rib ?? '');
-  const ibanNorm = normalizeIban(body.iban ?? '');
 
   if (!email || !password) {
     return NextResponse.json({ error: 'E-mail et mot de passe requis' }, { status: 400 });
   }
   if (password.length < 6) {
     return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 6 caractères' }, { status: 400 });
-  }
-  if (!isValidTunisianRib(ribNorm)) {
-    return NextResponse.json({ error: 'RIB invalide : 20 chiffres requis' }, { status: 400 });
-  }
-  if (!isValidTunisianIban(ibanNorm)) {
-    return NextResponse.json({ error: 'IBAN invalide : format tunisien attendu (TN + 22 caractères, 24 au total)' }, { status: 400 });
   }
 
   const password_hash = await bcrypt.hash(String(password), 10);
@@ -35,9 +26,17 @@ export async function POST(request: Request) {
       password_hash,
       full_name: fullName || null,
       phone: body.phone || null,
-      rib: ribNorm,
-      iban: ibanNorm,
       role: 'client',
+      cin: body.cin || null,
+      date_of_birth: body.date_of_birth || null,
+      address: body.address || null,
+      city: body.city || null,
+      postal_code: body.postal_code || null,
+      country: body.country || 'Tunisie',
+      profession: body.profession || null,
+      employer: body.employer || null,
+      years_experience: body.years_experience != null ? Number(body.years_experience) : null,
+      monthly_income: body.monthly_income != null ? Number(body.monthly_income) : null,
     })
     .select('id')
     .single();
