@@ -10,7 +10,7 @@ interface SimulatorCardProps {
   currency?: string;
 }
 
-const ANNUAL_RATE = 0.045; // 4.5% annuel (Tunisie, indicatif)
+const ANNUAL_RATE = 0.08; // 8% annuel (Tunisie, indicatif)
 const MAX_DEBT_RATIO_GOOD = 33;
 const MAX_DEBT_RATIO_ACCEPTABLE = 40;
 const MAX_DEBT_RATIO_RISKY = 50;
