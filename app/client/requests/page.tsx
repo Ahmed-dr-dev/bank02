@@ -439,7 +439,7 @@ function ClientRequests() {
               <div className="sticky top-0 z-20 mb-6 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
                 <p className="mb-3 text-sm font-semibold text-gray-900">Montant du crédit demandé</p>
                 <div className="max-w-md">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Montant demandé (TND) *</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Montant demandé (TND)</label>
                   <input
                     type="number"
                     min={1000}
@@ -525,7 +525,7 @@ function ClientRequests() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenus et charges (TND)</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND)</label>
                     <input type="number" min={0} step={100} value={formData.monthlyIncome ?? ''} onChange={update('monthlyIncome')} className={inputClass('monthlyIncome')} placeholder="15000" />
                     {err('monthlyIncome') && <p className="text-red-500 text-sm mt-1">{err('monthlyIncome')}</p>}
                   </div>
@@ -565,12 +565,12 @@ function ClientRequests() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails du crédit (TND)</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND)</label>
                     <input type="number" min={0} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} placeholder="250000" />
                     {err('creditAmount') && <p className="text-red-500 text-sm mt-1">{err('creditAmount')}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois)</label>
                     <input type="number" min={12} max={300} value={formData.duration ?? ''} onChange={update('duration')} className={inputClass('duration')} placeholder="120" />
                     {err('duration') && <p className="text-red-500 text-sm mt-1">{err('duration')}</p>}
                   </div>

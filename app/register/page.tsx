@@ -21,7 +21,6 @@ export default function RegisterPage() {
     country: 'Tunisie',
     profession: '',
     employer: '',
-    years_experience: '',
     monthly_income: '',
   });
 
@@ -67,7 +66,6 @@ export default function RegisterPage() {
           country: form.country || 'Tunisie',
           profession: form.profession || null,
           employer: form.employer || null,
-          years_experience: form.years_experience ? Number(form.years_experience) : null,
           monthly_income: form.monthly_income ? Number(form.monthly_income) : null,
         }),
         credentials: 'include',
@@ -111,7 +109,7 @@ export default function RegisterPage() {
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Prénom <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
                     <input
                       type="text"
                       value={form.firstName}
@@ -122,7 +120,7 @@ export default function RegisterPage() {
                     {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
                     <input
                       type="text"
                       value={form.lastName}
@@ -158,7 +156,7 @@ export default function RegisterPage() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail</label>
                     <input
                       type="email"
                       value={form.email}
@@ -169,7 +167,7 @@ export default function RegisterPage() {
                     {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone (Tunisie) <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone (Tunisie)</label>
                     <input
                       type="tel"
                       value={form.phone}
@@ -256,18 +254,6 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={60}
-                    value={form.years_experience}
-                    onChange={update('years_experience')}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="5"
-                  />
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Revenu mensuel net (TND)</label>
                   <input
                     type="number"
@@ -286,7 +272,7 @@ export default function RegisterPage() {
               <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Sécurité</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
                   <input
                     type="password"
                     value={form.password}
@@ -297,7 +283,7 @@ export default function RegisterPage() {
                   {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
                   <input
                     type="password"
                     value={form.confirmPassword}

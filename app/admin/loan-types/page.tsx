@@ -303,7 +303,7 @@ export default function AdminLoanTypes() {
 
             <div className="px-8 py-6 space-y-5">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">Nom *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">Nom</label>
                 <input
                   type="text"
                   value={form.name}

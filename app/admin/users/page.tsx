@@ -119,7 +119,7 @@ export default function AdminUsers() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Nouveau chargé de crédit</h2>
           <form onSubmit={createOfficer} className="grid md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
               <input
                 type="email"
                 value={createEmail}
@@ -129,7 +129,7 @@ export default function AdminUsers() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe * (min. 6)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe (min. 6)</label>
               <input
                 type="password"
                 value={createPassword}

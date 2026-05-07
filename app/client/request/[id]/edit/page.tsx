@@ -237,7 +237,7 @@ export default function EditRequestPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenus et charges (TND)</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Revenu net mensuel (TND)</label>
               <input type="number" min={0} step={100} value={formData.monthlyIncome ?? ''} onChange={update('monthlyIncome')} className={inputClass('monthlyIncome')} />
               {err('monthlyIncome') && <p className="text-red-500 text-sm mt-1">{err('monthlyIncome')}</p>}
             </div>
@@ -273,12 +273,12 @@ export default function EditRequestPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails du crédit (TND)</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Montant demandé (TND)</label>
               <input type="number" min={0} step={1000} value={formData.creditAmount ?? ''} onChange={update('creditAmount')} className={inputClass('creditAmount')} />
               {err('creditAmount') && <p className="text-red-500 text-sm mt-1">{err('creditAmount')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Durée (mois)</label>
               <input type="number" min={12} max={300} value={formData.duration ?? ''} onChange={update('duration')} className={inputClass('duration')} />
               {err('duration') && <p className="text-red-500 text-sm mt-1">{err('duration')}</p>}
             </div>
