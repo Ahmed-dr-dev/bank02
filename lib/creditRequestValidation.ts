@@ -26,7 +26,6 @@ export interface RequestFormData {
   employmentStatus?: string;
   profession?: string;
   employer?: string;
-  yearsExperience?: string;
   workAddress?: string;
   monthlyIncome?: string;
   additionalIncome?: string;

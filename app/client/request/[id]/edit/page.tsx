@@ -21,7 +21,6 @@ function requestToFormData(r: CreditRequest): RequestFormData {
     employmentStatus: r.employmentStatus ?? '',
     profession: r.profession ?? '',
     employer: r.employer ?? '',
-    yearsExperience: r.yearsExperience != null ? String(r.yearsExperience) : '',
     workAddress: r.workAddress ?? '',
     monthlyIncome: r.monthlyIncome != null ? String(r.monthlyIncome) : '',
     additionalIncome: r.additionalIncome != null ? String(r.additionalIncome) : '0',
@@ -121,7 +120,6 @@ export default function EditRequestPage() {
         profession: formData.profession,
         employmentStatus: formData.employmentStatus,
         employer: formData.employer,
-        yearsExperience: formData.yearsExperience,
         workAddress: formData.workAddress,
         monthlyIncome: formData.monthlyIncome,
         additionalIncome: formData.additionalIncome,
@@ -222,10 +220,6 @@ export default function EditRequestPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
               <input type="text" value={formData.employer ?? ''} onChange={update('employer')} className={inputClass('employer')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
-              <input type="number" min={0} max={50} value={formData.yearsExperience ?? ''} onChange={update('yearsExperience')} className={inputClass('yearsExperience')} />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Adresse professionnelle</label>

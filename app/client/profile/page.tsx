@@ -17,7 +17,6 @@ type ProfileData = {
   country: string | null;
   profession: string | null;
   employer: string | null;
-  years_experience: number | null;
   monthly_income: number | null;
   rib: string | null;
   iban: string | null;
@@ -38,7 +37,6 @@ const EMPTY_PROFILE: ProfileData = {
   country: '',
   profession: '',
   employer: '',
-  years_experience: null,
   monthly_income: null,
   rib: '',
   iban: '',
@@ -74,7 +72,6 @@ function normalizeProfileFromApi(raw: Record<string, unknown>): ProfileData {
     country: raw.country != null ? String(raw.country) : '',
     profession: raw.profession != null ? String(raw.profession) : '',
     employer: raw.employer != null ? String(raw.employer) : '',
-    years_experience: toNumberOrNull(raw.years_experience),
     monthly_income: toNumberOrNull(raw.monthly_income),
     rib: raw.rib != null ? String(raw.rib) : '',
     iban: raw.iban != null ? String(raw.iban) : '',
@@ -133,7 +130,7 @@ export default function ClientProfile() {
     return `${a}${b}`.trim().toUpperCase() || fallback.toUpperCase();
   }, [firstName, lastName, profile.email]);
 
-  const numericKeys = new Set<keyof ProfileData>(['monthly_income', 'years_experience']);
+  const numericKeys = new Set<keyof ProfileData>(['monthly_income']);
 
   const updateField =
     (key: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -180,7 +177,6 @@ export default function ClientProfile() {
         country: profile.country?.trim() || null,
         profession: profile.profession?.trim() || null,
         employer: profile.employer?.trim() || null,
-        years_experience: profile.years_experience,
         monthly_income: profile.monthly_income,
       };
       const ribT = profile.rib?.trim();
@@ -345,17 +341,6 @@ export default function ClientProfile() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Employeur</label>
               <input type="text" value={profile.employer ?? ''} onChange={updateField('employer')} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Années d&apos;expérience</label>
-              <input
-                type="number"
-                min={0}
-                max={60}
-                value={profile.years_experience ?? ''}
-                onChange={updateField('years_experience')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Revenu mensuel (TND)</label>

@@ -364,7 +364,6 @@ export default function ClientRequestDetail() {
                 <LabelValue label="Profession" value={request.profession} />
                 <LabelValue label="Employeur" value={request.employer} hideIfEmpty />
                 <LabelValue label="Situation" value={request.employmentStatus} hideIfEmpty />
-                <LabelValue label="Années d'expérience" value={request.yearsExperience != null ? String(request.yearsExperience) : undefined} hideIfEmpty />
                 <LabelValue label="Adresse professionnelle" value={request.workAddress} hideIfEmpty className="sm:col-span-2" />
               </div>
             </div>
