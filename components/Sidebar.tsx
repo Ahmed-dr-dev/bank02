@@ -13,6 +13,7 @@ export default function Sidebar() {
     { href: '/admin/assistant', label: 'Assistant', icon: '💬' },
     { href: '/admin/analytics', label: 'Analytiques', icon: '📈' },
     { href: '/admin/logs', label: 'Journal', icon: '📋' },
+    { href: '/admin/profile', label: 'Mon profil', icon: '👤' },
   ];
 
   return (
@@ -29,7 +30,7 @@ export default function Sidebar() {
             key={item.href}
             href={item.href}
             className={`flex items-center px-4 py-3 mb-2 rounded-xl transition-all ${
-              pathname === item.href
+              pathname === item.href || pathname.startsWith(item.href + '/')
                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                 : 'text-gray-300 hover:bg-gray-800 hover:text-white'
             }`}

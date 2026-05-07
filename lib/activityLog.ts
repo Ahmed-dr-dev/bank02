@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 export type LogAction =
   | 'login'
   | 'logout'
+  | 'password_changed'
   | 'request_created'
   | 'request_updated'
   | 'request_deleted'

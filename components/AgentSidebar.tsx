@@ -24,6 +24,7 @@ export default function AgentSidebar() {
     { href: '/agent/requests', label: 'Demandes', icon: '📝' },
     { href: '/agent/clients', label: 'Clients', icon: '👥' },
     { href: '/agent/messages', label: 'Messagerie', icon: '💬', badge: unread },
+    { href: '/agent/profile', label: 'Mon profil', icon: '👤' },
   ];
 
   return (

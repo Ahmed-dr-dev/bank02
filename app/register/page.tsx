@@ -21,7 +21,6 @@ export default function RegisterPage() {
     country: 'Tunisie',
     profession: '',
     employer: '',
-    monthly_income: '',
   });
 
   const validate = (): boolean => {
@@ -66,7 +65,6 @@ export default function RegisterPage() {
           country: form.country || 'Tunisie',
           profession: form.profession || null,
           employer: form.employer || null,
-          monthly_income: form.monthly_income ? Number(form.monthly_income) : null,
         }),
         credentials: 'include',
       });
@@ -251,17 +249,6 @@ export default function RegisterPage() {
                     onChange={update('employer')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nom de l'entreprise"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Revenu mensuel net (TND)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.monthly_income}
-                    onChange={update('monthly_income')}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="2000"
                   />
                 </div>
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import ChangePasswordSection from '@/components/ChangePasswordSection';
 
 /** Champs éditables + métadonnées renvoyées par GET /api/profile (hors password_hash). */
 type ProfileData = {
@@ -386,6 +387,8 @@ export default function ClientProfile() {
             </div>
           </div>
         </div>
+
+        <ChangePasswordSection />
 
         <div className="p-8 flex justify-end bg-gray-50">
           <button
